@@ -1,0 +1,14 @@
+{
+	"name": "vibecheck/vibe-check",
+	"description": "Vibe Check WordPress plugin (dev tooling)",
+	"license": "GPL-2.0-or-later",
+	"require-dev": {
+		"phpunit/phpunit": "^9.6"
+	},
+	"scripts": {
+		"test": "phpunit"
+	},
+	"config": {
+		"allow-plugins": {}
+	}
+}

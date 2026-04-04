@@ -1,0 +1,97 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "vibe-check/quiz",
+  "version": "1.5.21",
+  "title": "Vibe Check",
+  "category": "widgets",
+  "icon": "heart",
+  "description": "A fun quiz with shareable result cards.",
+  "keywords": ["quiz", "personality", "vibe"],
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"]
+  },
+  "attributes": {
+    "quizTitle": {
+      "type": "string",
+      "default": "What's your vibe?"
+    },
+    "quizSubtitle": {
+      "type": "string",
+      "default": ""
+    },
+    "questions": {
+      "type": "array",
+      "default": [
+        {
+          "id": "q1",
+          "text": "Pick a weekend plan.",
+          "answers": [
+            { "id": "a1", "text": "Museum or gallery", "scores": { "creative": 2, "chill": 0, "social": 0 } },
+            { "id": "a2", "text": "Brunch with friends", "scores": { "creative": 0, "chill": 0, "social": 2 } },
+            { "id": "a3", "text": "Sofa + snacks + show", "scores": { "creative": 0, "chill": 2, "social": 0 } }
+          ]
+        },
+        {
+          "id": "q2",
+          "text": "Your ideal soundtrack?",
+          "answers": [
+            { "id": "a1", "text": "Indie / experimental", "scores": { "creative": 2, "chill": 0, "social": 0 } },
+            { "id": "a2", "text": "Party playlist", "scores": { "creative": 0, "chill": 0, "social": 2 } },
+            { "id": "a3", "text": "Lo-fi beats", "scores": { "creative": 0, "chill": 2, "social": 0 } }
+          ]
+        },
+        {
+          "id": "q3",
+          "text": "How do you recharge?",
+          "answers": [
+            { "id": "a1", "text": "Making something", "scores": { "creative": 2, "chill": 0, "social": 0 } },
+            { "id": "a2", "text": "People energy", "scores": { "creative": 0, "chill": 0, "social": 2 } },
+            { "id": "a3", "text": "Alone time", "scores": { "creative": 0, "chill": 2, "social": 0 } }
+          ]
+        }
+      ]
+    },
+    "results": {
+      "type": "array",
+      "default": [
+        {
+          "id": "creative",
+          "title": "Creative Spark",
+          "tagline": "",
+          "description": "You chase curiosity and color outside the lines.",
+          "imageId": 0,
+          "ctaUrl": "",
+          "ctaLabel": "",
+          "redirect": false
+        },
+        {
+          "id": "social",
+          "title": "Social Battery",
+          "tagline": "",
+          "description": "You light up rooms and run on good conversation.",
+          "imageId": 0,
+          "ctaUrl": "",
+          "ctaLabel": "",
+          "redirect": false
+        },
+        {
+          "id": "chill",
+          "title": "Cozy Core",
+          "tagline": "",
+          "description": "Soft socks, good snacks, zero rush.",
+          "imageId": 0,
+          "ctaUrl": "",
+          "ctaLabel": "",
+          "redirect": false
+        }
+      ]
+    }
+  },
+  "textdomain": "vibe-check",
+  "editorScript": "file:./index.js",
+  "style": "file:./style-index.css",
+  "viewScript": "file:./view.js",
+  "render": "file:./render.php"
+}

@@ -1,0 +1,24 @@
+{
+  "name": "vibe-check",
+  "version": "1.5.21",
+  "description": "Vibe Check quiz block for WordPress",
+  "license": "GPL-2.0-or-later",
+  "files": [
+    "vibe-check.php",
+    "readme.txt",
+    "uninstall.php",
+    "includes",
+    "build",
+    "assets",
+    "languages"
+  ],
+  "scripts": {
+    "build": "wp-scripts build --webpack-copy-php",
+    "start": "wp-scripts start --webpack-copy-php",
+    "release": "npm run build && wp-scripts plugin-zip"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@wordpress/scripts": "^30.0.0"
+  }
+}

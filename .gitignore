@@ -1,0 +1,5 @@
+/node_modules/
+/vendor/
+.phpunit.result.cache
+vibe-check.zip
+.DS_Store
