@@ -44,7 +44,7 @@ if ( function_exists( 'vibe_check_get_default_share_image_url' ) ) {
 	$default_share_image_url = vibe_check_get_default_share_image_url();
 }
 ?>
-<div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?> data-quiz="<?php echo esc_attr( $quiz_json ); ?>" data-post-id="<?php echo esc_attr( (string) $post_id ); ?>" data-vibe-check-og-image-endpoint="<?php echo esc_url( rest_url( 'vibe-check/v1/og-image' ) ); ?>"<?php echo is_string( $default_share_image_url ) && '' !== $default_share_image_url ? ' data-vibe-check-default-share-image="' . esc_url( $default_share_image_url ) . '"' : ''; ?>>
+<div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?> data-quiz="<?php echo esc_attr( $quiz_json ); ?>" data-post-id="<?php echo esc_attr( (string) $post_id ); ?>"<?php echo is_string( $default_share_image_url ) && '' !== $default_share_image_url ? ' data-vibe-check-default-share-image="' . esc_url( $default_share_image_url ) . '"' : ''; ?>>
 	<div class="vibe-check-inner" hidden>
 		<div class="vibe-check-intro">
 			<div class="vibe-check-intro-card">

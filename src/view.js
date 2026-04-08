@@ -1,6 +1,6 @@
 /* eslint-env browser */
 /**
- * Front-end quiz; share/save are native `<a href>` (REST OG JPEG + social intents).
+ * Front-end quiz; share links are native `<a href>` social intents.
  */
 import { __, sprintf } from '@wordpress/i18n';
 
@@ -155,45 +155,31 @@ function vibeCheckBuildShareIntentUrls( sharePack, shareUrlStr ) {
 	const encRedditTitle = encodeURIComponent( redditTitle );
 	return {
 		twitter: `https://twitter.com/intent/tweet?text=${ encTweet }&url=${ encShareUrl }`,
-		facebook: `https://www.facebook.com/sharer/sharer.php?u=${ encShareUrl }`,
+		facebook: `https://www.facebook.com/sharer.php?u=${ encShareUrl }`,
 		reddit: `https://www.reddit.com/submit?url=${ encShareUrl }&title=${ encRedditTitle }`,
 	};
 }
 
-const VIBE_CHECK_SVG_NS =
+const VIBE_CHECK_SVG_FILL_NS =
 	'xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true" focusable="false" class="vibe-check-share-icon"';
 
 /**
  * Inline SVG for share chips (no network, CSP-safe).
  *
- * @param {'x'|'facebook'|'reddit'|'download'} id
+ * @param {'x'|'facebook'|'reddit'} id
  * @return {string} Raw SVG HTML (trusted paths only).
  */
 function vibeCheckShareIconSvg( id ) {
 	switch ( id ) {
 		case 'x':
-			return `<svg ${ VIBE_CHECK_SVG_NS }><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`;
+			return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.35" stroke-linecap="round" aria-hidden="true" focusable="false" class="vibe-check-share-icon vibe-check-share-icon--x"><path d="M5 5l14 14M19 5L5 19"/></svg>`;
 		case 'facebook':
-			return `<svg ${ VIBE_CHECK_SVG_NS }><path d="M24 12.073C24 5.446 18.627 0 12 0S0 5.446 0 12.073c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>`;
+			return `<svg ${ VIBE_CHECK_SVG_FILL_NS }><path d="M24 12.073C24 5.446 18.627 0 12 0S0 5.446 0 12.073c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>`;
 		case 'reddit':
-			return `<svg ${ VIBE_CHECK_SVG_NS }><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm6.5 11.9c0 .9-.7 1.6-1.6 1.6-.9 0-1.6-.7-1.6-1.6 0-.9.7-1.6 1.6-1.6.9 0 1.6.7 1.6 1.6zm-13 0c0 .9-.7 1.6-1.6 1.6-.9 0-1.6-.7-1.6-1.6 0-.9.7-1.6 1.6-1.6.9 0 1.6.7 1.6 1.6zm6.5 4.5c-2.2 0-4.1-1.2-5.1-3h10.2c-1 1.8-2.9 3-5.1 3z"/></svg>`;
-		case 'download':
-			return `<svg ${ VIBE_CHECK_SVG_NS }><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>`;
+			return `<svg ${ VIBE_CHECK_SVG_FILL_NS }><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm6.5 11.9c0 .9-.7 1.6-1.6 1.6-.9 0-1.6-.7-1.6-1.6 0-.9.7-1.6 1.6-1.6.9 0 1.6.7 1.6 1.6zm-13 0c0 .9-.7 1.6-1.6 1.6-.9 0-1.6-.7-1.6-1.6 0-.9.7-1.6 1.6-1.6.9 0 1.6.7 1.6 1.6zm6.5 4.5c-2.2 0-4.1-1.2-5.1-3h10.2c-1 1.8-2.9 3-5.1 3z"/></svg>`;
 		default:
-			return `<svg ${ VIBE_CHECK_SVG_NS }><circle cx="12" cy="12" r="10"/></svg>`;
+			return `<svg ${ VIBE_CHECK_SVG_FILL_NS }><circle cx="12" cy="12" r="10"/></svg>`;
 	}
-}
-
-/**
- * @param {{ title: string }} quiz
- * @param {string}         winnerId
- */
-function resultImageBaseName( quiz, winnerId ) {
-	const q = slugify( quiz.title || 'quiz' );
-	const w = slugify( winnerId || 'result' );
-	const d = new Date();
-	const ymd = `${ d.getFullYear() }-${ String( d.getMonth() + 1 ).padStart( 2, '0' ) }-${ String( d.getDate() ).padStart( 2, '0' ) }`;
-	return `${ q }-${ w }-${ ymd }.jpg`;
 }
 
 /**
@@ -1076,7 +1062,7 @@ function initQuiz( root ) {
 			ctaHtml = `
 				<p class="vibe-check-result-redirect-hint">${ escHtml(
 					__(
-						'You will be redirected shortly. Share or save your result card below first.',
+						'You will be redirected shortly. Share your result below first.',
 						'vibe-check'
 					)
 				) }</p>
@@ -1111,31 +1097,6 @@ function initQuiz( root ) {
 			shareUrlStrForLinks
 		);
 
-		const postIdStr = root.getAttribute( 'data-post-id' ) || '0';
-		const postIdNum = parseInt( postIdStr, 10 ) || 0;
-		const ogBase =
-			root.getAttribute( 'data-vibe-check-og-image-endpoint' ) || '';
-		let saveImageHtml = '';
-		if ( postIdNum > 0 && ogBase ) {
-			const saveUrl = `${ ogBase }?post_id=${ encodeURIComponent(
-				String( postIdNum )
-			) }&result_id=${ encodeURIComponent( String( winner ) ) }`;
-			const downloadName = resultImageBaseName( quiz, winner );
-			saveImageHtml = `<a href="${ escAttr(
-				saveUrl
-			) }" download="${ escAttr(
-				downloadName
-			) }" class="vibe-check-download-btn vibe-check-download-link vibe-check-share-link--icon" aria-label="${ escAttr(
-				__( 'Save image', 'vibe-check' )
-			) }">${ vibeCheckShareIconSvg( 'download' ) }</a>`;
-		} else {
-			saveImageHtml = `<span class="vibe-check-save-image-unavailable vibe-check-share-link--icon" role="img" title="${ escAttr(
-				__( 'Save the image from a published post.', 'vibe-check' )
-			) }" aria-label="${ escAttr(
-				__( 'Save image unavailable', 'vibe-check' )
-			) }">${ vibeCheckShareIconSvg( 'download' ) }</span>`;
-		}
-
 		result.setAttribute( 'data-vibe-check-winner', winner );
 
 		result.innerHTML = `
@@ -1166,7 +1127,7 @@ function initQuiz( root ) {
 						) }" target="_blank" rel="noopener noreferrer" aria-label="${ escAttr(
 							__( 'Share on X', 'vibe-check' )
 						) }">${ vibeCheckShareIconSvg( 'x' ) }</a>
-						<a class="vibe-check-share-link vibe-check-share-link--secondary vibe-check-share-link--icon" href="${ escAttr(
+						<a class="vibe-check-share-link vibe-check-share-link--fb vibe-check-share-link--icon" href="${ escAttr(
 							intentUrls.facebook
 						) }" target="_blank" rel="noopener noreferrer" aria-label="${ escAttr(
 							__( 'Share on Facebook', 'vibe-check' )
@@ -1176,7 +1137,6 @@ function initQuiz( root ) {
 						) }" target="_blank" rel="noopener noreferrer" aria-label="${ escAttr(
 							__( 'Share on Reddit', 'vibe-check' )
 						) }">${ vibeCheckShareIconSvg( 'reddit' ) }</a>
-						${ saveImageHtml }
 					</div>
 					<button type="button" class="vibe-check-restart">${ escHtml(
 						__( 'Retake Quiz', 'vibe-check' )

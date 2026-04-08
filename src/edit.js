@@ -1362,9 +1362,6 @@ export default function Edit( { attributes, setAttributes } ) {
 													'vibe-check'
 												) }
 											</span>
-											<span className="vibe-check-editor-result-preview-faux-btn vibe-check-editor-result-preview-faux-save">
-												{ __( 'Save Image', 'vibe-check' ) }
-											</span>
 										</div>
 										<p className="vibe-check-editor-result-preview-retake">
 											{ __( 'Retake Quiz', 'vibe-check' ) }

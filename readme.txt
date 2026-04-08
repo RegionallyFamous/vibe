@@ -3,19 +3,19 @@ Contributors: vibecheck
 Tags: block, quiz, personality, gutenberg, share, claude, ai
 Requires at least: 6.5
 Tested up to: 6.8
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-A Gutenberg block for personality-style quizzes. Generate quizzes with **Anthropic Claude** (API key in settings), **Save image** for a server-rendered share JPEG, and Open Graph / Twitter meta for shared result URLs.
+A Gutenberg block for personality-style quizzes. Generate quizzes with **Anthropic Claude** (API key in settings), share results on **X, Facebook, and Reddit**, and get Open Graph / Twitter meta (including a server-rendered preview JPEG) for shared result URLs.
 
 == Description ==
 
 * **Structured authoring** — Define **three outcomes** on the block (ids, titles, descriptions, **result images** from the Media Library), then **Generate questions from outcomes** so Claude only writes questions and scoring—your result copy stays yours. Edit questions and answers on the **canvas** before publishing.
 * **Claude generation** — In the sidebar, pick a mode: **questions from my outcomes** (recommended), **full quiz**, **questions only**, or **results only**. Optional **style presets** (personality, this-or-that, fandom). Your API key stays on the server.
-* **Result screen & links** — Per outcome, optional **link URL** and **button label**; optional **auto-redirect** after a short countdown (with “Go now” and **Cancel**). Visitors can still share or save the result card first.
-* **Share & save** — One-tap links for **X, Facebook, and Reddit**, plus **Save image** (same server-rendered JPEG as Open Graph previews). Share copy invites friends to take the quiz; filters let you tune invitation lines and hashtags.
+* **Result screen & links** — Per outcome, optional **link URL** and **button label**; optional **auto-redirect** after a short countdown (with “Go now” and **Cancel**). Visitors can still use the share buttons first.
+* **Share** — One-tap links for **X, Facebook, and Reddit**. Share copy invites friends to take the quiz; filters let you tune invitation lines and hashtags.
 * **Link previews** — `?quiz_result=` adds `og:title`, `og:description`, `og:image`, and Twitter tags for social crawlers. **Settings → Default share image** sets `og:image` for the quiz page URL before someone takes the quiz (no query string).
 
 Replace the Contributors line with your WordPress.org username before submitting to the plugin directory.
@@ -42,6 +42,10 @@ Never commit keys to git. The key is only used in PHP; never sent to site visito
 
 You need the compiled assets in `build/` (from `npm run build`). Ship a release zip that already includes `build/`.
 
+= How do updates from GitHub work? =
+
+The plugin checks the [RegionallyFamous/vibe](https://github.com/RegionallyFamous/vibe) **Releases** API (no token needed for this public repo). When a newer semver tag exists and the release includes a **.zip** asset (e.g. `vibe-check.zip`), **Dashboard → Updates** can install it. For a **private** fork or mirror, define a GitHub personal access token in `wp-config.php` as `GITHUB_UPDATER_TOKEN` before the plugin loads.
+
 = Where are Open Graph images served? =
 
 `GET /wp-json/vibe-check/v1/og-image?post_id=…&result_id=…` returns a JPEG. When `?quiz_result=` is present on a singular post, meta tags include title, description, and image for crawlers.
@@ -51,7 +55,7 @@ You need the compiled assets in `build/` (from `npm run build`). Ship a release 
 = Privacy and data =
 
 * **Claude** — Prompts are sent from WordPress to Anthropic’s API **only on the server** when an editor uses “Generate”. Visitors never receive your API key.
-* **Share images** — **Save image** downloads a JPEG from your site’s **Open Graph image** REST endpoint (generated on the server). Images are not uploaded to a third-party host by this plugin.
+* **Link preview images** — Social crawlers fetch a server-generated JPEG from your site’s **Open Graph image** REST endpoint when someone shares a result URL. Images are not uploaded to a third-party host by this plugin.
 * **Last result (optional)** — The front end may store the last quiz result title in **sessionStorage** so the intro can show “Last time: …”. It is not sent to the server.
 
 = My result images look broken in the share preview =
@@ -73,8 +77,8 @@ Cache keys include post ID, a hash of post content, `result_id`, and a generatio
 
 = Sharing & social =
 
-* **Result row** — Native `<a href>` links (no JavaScript required) open **X**, **Facebook**, and **Reddit** intents with copy that includes your result plus an invitation to take the quiz. **Save image** downloads the same JPEG used for Open Graph previews when the block is on a published post (`post_id` &gt; 0). Optional **hashtags** from `vibe_check_share_hashtags` are folded into the X post text (when they fit) and the Reddit title.
-* **Instagram / TikTok** — There is no universal “post this URL” API; visitors can **Save image**, open the app, and paste the quiz link from the address bar (or use a link sticker / bio link as the platform allows).
+* **Result row** — Native `<a href>` links (no JavaScript required) open **X**, **Facebook**, and **Reddit** intents with copy that includes your result plus an invitation to take the quiz. Optional **hashtags** from `vibe_check_share_hashtags` are folded into the X post text (when they fit) and the Reddit title.
+* **Instagram / TikTok** — There is no universal “post this URL” API; visitors can take a screenshot, open the app, and paste the quiz link from the address bar (or use a link sticker / bio link as the platform allows).
 * **Link previews** — Shared URLs with `?quiz_result=` include `og:image` (quiz JPEG), title, and description. A short **“Take the quiz…”** line is appended to the description for scroll-stopping snippets (filterable). The **default share image** from Settings applies to the plain quiz page URL (see FAQ).
 
 **Filters**
@@ -91,12 +95,20 @@ Keys saved under **Settings → Vibe Check** are stored as a normal WordPress op
 
 == Changelog ==
 
+= 1.0.1 =
+* **Updates** — GitHub Releases integration (`github-updater.php`): **Dashboard → Updates** can install new versions from [RegionallyFamous/vibe](https://github.com/RegionallyFamous/vibe) when a release includes a `.zip` asset. Public repo needs no token; optional `GITHUB_UPDATER_TOKEN` in `wp-config.php` for private mirrors.
+* **Share** — Removed front-end **Save image** download control; tightened quiz JSON validation on the client; **X** icon uses a reliable stroke mark; **Facebook** share uses `sharer.php` (fixes broken shares from `sharer/sharer.php` on many hosts).
+* **Housekeeping** — `Plugin URI` points at GitHub; readme FAQ for GitHub updates; release zip includes the updater file.
+
 = 1.0.0 =
 * First stable release: **Vibe Check** quiz block with structured outcomes, **Anthropic Claude** generation (server-side REST API; API key in Settings or `wp-config.php`).
-* **Share & previews** — Native share links (X, Facebook, Reddit), **Save image** (server-rendered OG JPEG), Open Graph / Twitter meta for `?quiz_result=`, optional **default share image** in Settings for the plain quiz URL.
+* **Share & previews** — Native share links (X, Facebook, Reddit), Open Graph / Twitter meta for `?quiz_result=` (server-rendered preview JPEG), optional **default share image** in Settings for the plain quiz URL.
 * **Safety & limits** — Sanitized quiz payload, size limits on REST and `data-quiz`, generation and OG JPEG rate limiting, uninstall option cleanup.
 
 == Upgrade Notice ==
+
+= 1.0.1 =
+GitHub-based updates, share row tweaks (no Save image), and Facebook share URL fix.
 
 = 1.0.0 =
 First stable release of Vibe Check.

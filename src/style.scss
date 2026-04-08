@@ -638,11 +638,6 @@
 	color: var(--vc-accent-ink);
 }
 
-.vibe-check-editor-result-preview-faux-save {
-	background: var(--vc-surface);
-	color: var(--vc-ink);
-}
-
 .vibe-check-editor-result-preview-retake {
 	margin: 0.75rem 0 0;
 	font-size: 0.8rem;
@@ -1649,6 +1644,10 @@
 	display: block;
 }
 
+.vibe-check-share-link--x .vibe-check-share-icon--x {
+	stroke: currentColor;
+}
+
 .vibe-check-share-link--icon {
 	box-sizing: border-box;
 	min-width: 44px;
@@ -1656,10 +1655,6 @@
 	padding: 0.4rem;
 	flex-shrink: 0;
 	justify-content: center;
-}
-
-.vibe-check-save-image-unavailable.vibe-check-share-link--icon {
-	opacity: 0.55;
 }
 
 .vibe-check-share-actions {
@@ -1674,9 +1669,8 @@
 	align-self: center;
 }
 
-/* Native <a> share/save: same chip look as former buttons (no JS required to activate). */
+/* Native <a> share links: same chip look as former buttons (no JS required to activate). */
 .vibe-check-share-btn,
-.vibe-check-download-btn,
 .vibe-check-share-link {
 	position: relative;
 	z-index: 5;
@@ -1749,43 +1743,7 @@
 	box-shadow: 1px 1px 0 var(--vc-ink);
 }
 
-.vibe-check-download-btn {
-	background: var(--vc-surface);
-	color: var(--vc-ink);
-	box-shadow: var(--vc-shadow-sm);
-}
-
-a.vibe-check-download-btn {
-	color: var(--vc-ink);
-}
-
-.vibe-check-download-btn:hover {
-	background: #fff;
-	transform: translate(2px, 2px);
-	box-shadow: 3px 3px 0 var(--vc-ink);
-}
-
-.vibe-check-download-btn:active {
-	transform: translate(4px, 4px);
-	box-shadow: 1px 1px 0 var(--vc-ink);
-}
-
-.vibe-check-save-image-unavailable {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	padding: 0.42rem 0.75rem;
-	border: 2px dashed color-mix(in srgb, var(--vc-muted) 55%, var(--vc-ink));
-	border-radius: var(--vc-radius);
-	font-size: 0.8125rem;
-	font-weight: 700;
-	color: var(--vc-muted);
-	cursor: not-allowed;
-	opacity: 0.85;
-}
-
-.vibe-check-share-btn:disabled,
-.vibe-check-download-btn:disabled {
+.vibe-check-share-btn:disabled {
 	opacity: 0.55;
 	cursor: wait;
 	transform: none;
@@ -1906,23 +1864,15 @@ a.vibe-check-download-btn {
 	}
 
 	.vibe-check-share-btn,
-	.vibe-check-download-btn:not(.vibe-check-share-link--icon),
 	.vibe-check-share-link:not(.vibe-check-share-link--icon) {
 		width: 100%;
 		justify-content: center;
 		min-height: 44px;
 	}
 
-	.vibe-check-share-link--icon,
-	a.vibe-check-download-btn.vibe-check-share-link--icon {
+	.vibe-check-share-link--icon {
 		width: 44px;
 		min-width: 44px;
-	}
-
-	.vibe-check-save-image-unavailable:not(.vibe-check-share-link--icon) {
-		width: 100%;
-		justify-content: center;
-		min-height: 44px;
 	}
 
 }
