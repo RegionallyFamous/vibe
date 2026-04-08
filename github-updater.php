@@ -82,26 +82,59 @@ class GitHub_Plugin_Updater {
 		$this->token       = strlen( $tok ) > 512 ? substr( $tok, 0, 512 ) : $tok;
 
 		if ( '' === $this->owner || '' === $this->repo ) {
-			_doing_it_wrong( __CLASS__, 'GitHub_Plugin_Updater requires owner and repo.', '1.0.6' );
+			_doing_it_wrong( __CLASS__, 'GitHub_Plugin_Updater requires owner and repo.', '1.0.7' );
 			return;
 		}
 
 		$this->cache_key = self::release_transient_key( $this->owner, $this->repo );
 
 		add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'inject_update' ) );
+		// Some hosts never re-fire pre_set; merging on read still uses the cached GitHub JSON transient.
+		add_filter( 'site_transient_update_plugins', array( $this, 'inject_update_on_read' ), 20, 1 );
 		add_filter( 'plugins_api', array( $this, 'plugin_info' ), 20, 3 );
 		add_filter( 'upgrader_process_complete', array( $this, 'clear_cache' ), 10, 2 );
 	}
 
 	/**
-	 * Inject GitHub release into the update transient when a newer version exists.
+	 * @param object|false $transient Update transient or false.
+	 * @return object|false
+	 */
+	public function inject_update_on_read( $transient ) {
+		if ( ! is_object( $transient ) ) {
+			return $transient;
+		}
+		return $this->merge_github_release_into_transient( $transient );
+	}
+
+	/**
+	 * Before WordPress saves the update_plugins site transient.
 	 *
 	 * @param object $transient Update transient.
 	 * @return object
 	 */
 	public function inject_update( $transient ) {
-		if ( empty( $transient->checked ) ) {
+		if ( ! is_object( $transient ) ) {
 			return $transient;
+		}
+		return $this->merge_github_release_into_transient( $transient );
+	}
+
+	/**
+	 * Attach GitHub release to response / no_update for this plugin’s basename(s).
+	 *
+	 * @param object $transient Update transient.
+	 * @return object
+	 */
+	private function merge_github_release_into_transient( $transient ) {
+		if ( empty( $transient->checked ) || ! is_array( $transient->checked ) ) {
+			return $transient;
+		}
+
+		if ( ! isset( $transient->response ) || ! is_array( $transient->response ) ) {
+			$transient->response = array();
+		}
+		if ( ! isset( $transient->no_update ) || ! is_array( $transient->no_update ) ) {
+			$transient->no_update = array();
 		}
 
 		$release = $this->get_latest_release();
@@ -115,18 +148,31 @@ class GitHub_Plugin_Updater {
 			return $transient;
 		}
 
-		$slugs = $this->collect_slugs_for_this_plugin( $transient->checked );
+		$short_slug = $this->plugin_dir_slug();
+		$slugs      = $this->collect_slugs_for_this_plugin( $transient->checked );
+
 		foreach ( $slugs as $slug ) {
 			if ( ! isset( $transient->checked[ $slug ] ) ) {
 				continue;
 			}
 			$installed_version = $transient->checked[ $slug ];
 			if ( version_compare( $latest_version, $installed_version, '>' ) ) {
-				$transient->response[ $slug ] = $this->build_update_object( $zip_url, $latest_version );
+				$transient->response[ $slug ] = $this->build_update_object( $zip_url, $latest_version, $short_slug, $slug );
+			} else {
+				$transient->no_update[ $slug ] = $this->build_no_update_object( $installed_version, $short_slug, $slug );
 			}
 		}
 
 		return $transient;
+	}
+
+	/**
+	 * Directory slug (e.g. vibe-check), not plugin_basename.
+	 *
+	 * @return string
+	 */
+	private function plugin_dir_slug() {
+		return str_replace( '/' . basename( $this->plugin_file ), '', $this->plugin_slug );
 	}
 
 	/**
@@ -337,6 +383,15 @@ class GitHub_Plugin_Updater {
 		$response = wp_remote_get( $url, $args );
 
 		if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+			if ( defined( 'VIBE_CHECK_UPDATER_DEBUG' ) && VIBE_CHECK_UPDATER_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
+				if ( is_wp_error( $response ) ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- opt-in debug.
+					error_log( 'Vibe Check GitHub updater: ' . $response->get_error_message() );
+				} else {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- opt-in debug.
+					error_log( 'Vibe Check GitHub updater: HTTP ' . (int) wp_remote_retrieve_response_code( $response ) . ' ' . $url );
+				}
+			}
 			set_transient( $this->cache_key, array(), 5 * MINUTE_IN_SECONDS );
 			self::$memo_set     = true;
 			self::$memo_sig     = $sig;
@@ -399,19 +454,44 @@ class GitHub_Plugin_Updater {
 	}
 
 	/**
-	 * @param string $zip_url Package URL.
-	 * @param string $version Parsed version.
+	 * @param string $zip_url      Package URL.
+	 * @param string $version      Parsed version.
+	 * @param string $short_slug   Plugin directory slug (WordPress core expects this, not basename).
+	 * @param string $plugin_file  plugin_basename main file.
 	 * @return object
 	 */
-	private function build_update_object( $zip_url, $version ) {
+	private function build_update_object( $zip_url, $version, $short_slug, $plugin_file ) {
 		$obj              = new stdClass();
-		$obj->slug        = $this->plugin_slug;
-		$obj->plugin      = $this->plugin_slug;
+		$obj->id          = $this->owner . '/' . $this->repo;
+		$obj->slug        = $short_slug;
+		$obj->plugin      = $plugin_file;
 		$obj->new_version = $version;
 		$obj->url         = 'https://github.com/' . $this->owner . '/' . $this->repo;
 		$obj->package     = $zip_url;
 		$obj->icons       = array();
 		$obj->banners     = array();
+		$obj->banners_rtl = array();
+		return $obj;
+	}
+
+	/**
+	 * @param string $installed_version Current header version.
+	 * @param string $short_slug        Directory slug.
+	 * @param string $plugin_file       plugin_basename.
+	 * @return object
+	 */
+	private function build_no_update_object( $installed_version, $short_slug, $plugin_file ) {
+		$obj              = new stdClass();
+		$obj->id          = $this->owner . '/' . $this->repo;
+		$obj->slug        = $short_slug;
+		$obj->plugin      = $plugin_file;
+		$obj->new_version = $installed_version;
+		$obj->url         = 'https://github.com/' . $this->owner . '/' . $this->repo;
+		$obj->package     = false;
+		$obj->icons       = array();
+		$obj->banners     = array();
+		$obj->banners_rtl = array();
+		$obj->tested      = get_bloginfo( 'version' );
 		return $obj;
 	}
 

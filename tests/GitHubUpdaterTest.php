@@ -138,8 +138,11 @@ class GitHubUpdaterTest extends TestCase {
 		$out = $updater->inject_update( $t );
 
 		$this->assertArrayHasKey( 'vibe-check/vibe-check.php', $out->response );
-		$this->assertSame( '2.0.0', $out->response['vibe-check/vibe-check.php']->new_version );
-		$this->assertStringStartsWith( 'https://', $out->response['vibe-check/vibe-check.php']->package );
+		$row = $out->response['vibe-check/vibe-check.php'];
+		$this->assertSame( '2.0.0', $row->new_version );
+		$this->assertSame( 'vibe-check', $row->slug, 'WordPress core expects directory slug, not basename.' );
+		$this->assertSame( 'vibe-check/vibe-check.php', $row->plugin );
+		$this->assertStringStartsWith( 'https://', $row->package );
 	}
 
 	/**
@@ -171,7 +174,7 @@ class GitHubUpdaterTest extends TestCase {
 		$out = $updater->inject_update( $t );
 		$this->assertSame( array(), $out->response );
 
-		$t->checked = array( 'vibe-check/vibe-check.php' => '1.0.6' );
+		$t->checked = array( 'vibe-check/vibe-check.php' => '1.0.7' );
 		$t->response = array();
 		$out2        = $updater->inject_update( $t );
 		$this->assertSame( array(), $out2->response );
