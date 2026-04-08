@@ -3,7 +3,7 @@
  * Plugin Name:       Vibe Check
  * Plugin URI:        https://wordpress.org/plugins/vibe-check/
  * Description:       Personality-style quiz block with shareable result cards and optional OG images.
- * Version:           1.5.21
+ * Version:           1.0.0
  * Requires at least: 6.5
  * Requires PHP:      7.4
  * Author:            Vibe Check
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'VIBE_CHECK_VERSION', '1.5.21' );
+define( 'VIBE_CHECK_VERSION', '1.0.0' );
 define( 'VIBE_CHECK_PLUGIN_FILE', __FILE__ );
 define( 'VIBE_CHECK_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'VIBE_CHECK_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
