@@ -3,7 +3,7 @@ Contributors: vibecheck
 Tags: block, quiz, personality, gutenberg, share, claude, ai
 Requires at least: 6.5
 Tested up to: 6.8
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -45,6 +45,8 @@ You need the compiled assets in `build/` (from `npm run build`). Ship a release 
 = How do updates from GitHub work? =
 
 The plugin checks the [RegionallyFamous/vibe](https://github.com/RegionallyFamous/vibe) **Releases** API (no token needed for this public repo). When a newer semver tag exists and the release includes a **.zip** asset (e.g. `vibe-check.zip`), **Dashboard → Updates** can install it. For a **private** fork or mirror, define a GitHub personal access token in `wp-config.php` as `GITHUB_UPDATER_TOKEN` before the plugin loads.
+
+**If you don’t see an update:** use **Dashboard → Updates → Check again** (WordPress caches update checks for several hours). The GitHub object must be a **published Release** (not only a lightweight tag). The plugin folder should be `wp-content/plugins/vibe-check/` with main file `vibe-check.php` so WordPress matches the update to the right plugin.
 
 = Where are Open Graph images served? =
 
@@ -95,6 +97,9 @@ Keys saved under **Settings → Vibe Check** are stored as a normal WordPress op
 
 == Changelog ==
 
+= 1.0.3 =
+* **GitHub updater** — Fix owner/repo sanitization: normalize case **before** stripping characters so mixed-case org names (e.g. `RegionallyFamous`) resolve to the correct API path. Allow **api.github.com** zipball URLs when a release has no `.zip` asset (fallback package URL).
+
 = 1.0.2 =
 * **GitHub updater** — Sanitize owner/repo for API URLs; only accept **HTTPS** package links on GitHub-controlled hosts (blocks rogue zip URLs from API JSON). Stricter HTTP client defaults; bounded JSON decode depth; capped changelog body and tag length; PAT length cap; skip plugin details modal when no trusted zip.
 * **Performance** — Same-request memo so update checks don’t call the GitHub API twice; single `init` pass for view-script translations + share strings; prime attachment **postmeta** when enriching result images (fewer queries).
@@ -110,6 +115,9 @@ Keys saved under **Settings → Vibe Check** are stored as a normal WordPress op
 * **Safety & limits** — Sanitized quiz payload, size limits on REST and `data-quiz`, generation and OG JPEG rate limiting, uninstall option cleanup.
 
 == Upgrade Notice ==
+
+= 1.0.3 =
+Critical fix for GitHub-based updates when the repository owner name contains uppercase letters.
 
 = 1.0.2 =
 Hardened GitHub updater and small performance improvements for updates and quiz media.

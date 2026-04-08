@@ -83,7 +83,7 @@ class GitHub_Plugin_Updater {
 		$this->cache_key   = 'ghu_' . md5( $this->owner . '|' . $this->repo );
 
 		if ( '' === $this->owner || '' === $this->repo ) {
-			_doing_it_wrong( __CLASS__, 'GitHub_Plugin_Updater requires owner and repo.', '1.0.2' );
+			_doing_it_wrong( __CLASS__, 'GitHub_Plugin_Updater requires owner and repo.', '1.0.3' );
 			return;
 		}
 
@@ -199,7 +199,8 @@ class GitHub_Plugin_Updater {
 	 * @return string
 	 */
 	private static function sanitize_github_owner( $raw ) {
-		$s = strtolower( preg_replace( '/[^a-z0-9-]/', '', (string) $raw ) );
+		$s = strtolower( (string) $raw );
+		$s = preg_replace( '/[^a-z0-9-]/', '', $s );
 		return substr( $s, 0, 39 );
 	}
 
@@ -210,7 +211,8 @@ class GitHub_Plugin_Updater {
 	 * @return string
 	 */
 	private static function sanitize_github_repo( $raw ) {
-		$s = strtolower( preg_replace( '/[^a-z0-9._-]/', '', (string) $raw ) );
+		$s = strtolower( (string) $raw );
+		$s = preg_replace( '/[^a-z0-9._-]/', '', $s );
 		return substr( $s, 0, 100 );
 	}
 
@@ -233,7 +235,7 @@ class GitHub_Plugin_Updater {
 			return false;
 		}
 		$host = strtolower( $host );
-		if ( in_array( $host, array( 'github.com', 'www.github.com', 'codeload.github.com' ), true ) ) {
+		if ( in_array( $host, array( 'github.com', 'www.github.com', 'codeload.github.com', 'api.github.com' ), true ) ) {
 			return true;
 		}
 		$suffix = '.githubusercontent.com';
