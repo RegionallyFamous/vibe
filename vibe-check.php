@@ -3,7 +3,7 @@
  * Plugin Name:       Vibe Check
  * Plugin URI:        https://github.com/RegionallyFamous/vibe
  * Description:       Personality-style quiz block with shareable result cards and optional OG images.
- * Version:           1.0.4
+ * Version:           1.0.5
  * Requires at least: 6.5
  * Requires PHP:      7.4
  * Author:            Vibe Check
@@ -22,16 +22,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once __DIR__ . '/github-updater.php';
 
+/** GitHub repo for in-plugin updates (also used to clear updater transients). */
+define( 'VIBE_CHECK_GITHUB_OWNER', 'RegionallyFamous' );
+define( 'VIBE_CHECK_GITHUB_REPO', 'vibe' );
+
 new GitHub_Plugin_Updater(
 	__FILE__,
 	array(
-		'owner' => 'RegionallyFamous',
-		'repo'  => 'vibe',
+		'owner' => VIBE_CHECK_GITHUB_OWNER,
+		'repo'  => VIBE_CHECK_GITHUB_REPO,
 		'token' => defined( 'GITHUB_UPDATER_TOKEN' ) ? GITHUB_UPDATER_TOKEN : '',
 	)
 );
 
-define( 'VIBE_CHECK_VERSION', '1.0.4' );
+define( 'VIBE_CHECK_VERSION', '1.0.5' );
 define( 'VIBE_CHECK_PLUGIN_FILE', __FILE__ );
 define( 'VIBE_CHECK_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'VIBE_CHECK_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -199,3 +203,52 @@ function vibe_check_block_asset_cache_bust( $src, $handle ) {
 }
 add_filter( 'script_loader_src', 'vibe_check_block_asset_cache_bust', 20, 2 );
 add_filter( 'style_loader_src', 'vibe_check_block_asset_cache_bust', 20, 2 );
+
+/**
+ * Clear WordPress core plugin update transient + GitHub release JSON cache (linked from Settings → Vibe Check).
+ *
+ * @return void
+ */
+function vibe_check_clear_plugin_update_caches_redirect() {
+	if ( ! is_admin() || ! isset( $_GET['vibe_check_clear_plugin_updates'] ) || '1' !== $_GET['vibe_check_clear_plugin_updates'] ) {
+		return;
+	}
+	if ( ! current_user_can( 'update_plugins' ) ) {
+		wp_die( esc_html__( 'Sorry, you are not allowed to update plugins.', 'vibe-check' ) );
+	}
+	check_admin_referer( 'vibe_check_clear_plugin_updates' );
+	if ( class_exists( 'GitHub_Plugin_Updater' ) && defined( 'VIBE_CHECK_GITHUB_OWNER' ) && defined( 'VIBE_CHECK_GITHUB_REPO' ) ) {
+		delete_site_transient( 'update_plugins' );
+		delete_transient( GitHub_Plugin_Updater::release_transient_key( VIBE_CHECK_GITHUB_OWNER, VIBE_CHECK_GITHUB_REPO ) );
+		GitHub_Plugin_Updater::clear_static_memo();
+	}
+	wp_safe_redirect(
+		add_query_arg(
+			array(
+				'page'                         => 'vibe-check',
+				'vibe_check_updates_cleared' => '1',
+			),
+			admin_url( 'options-general.php' )
+		)
+	);
+	exit;
+}
+add_action( 'admin_init', 'vibe_check_clear_plugin_update_caches_redirect', 1 );
+
+/**
+ * Confirm cache clear on the settings screen.
+ *
+ * @return void
+ */
+function vibe_check_admin_notice_plugin_updates_cleared() {
+	if ( ! isset( $_GET['vibe_check_updates_cleared'], $_GET['page'] ) || '1' !== $_GET['vibe_check_updates_cleared'] || 'vibe-check' !== $_GET['page'] ) {
+		return;
+	}
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+	echo '<div class="notice notice-success is-dismissible"><p>';
+	esc_html_e( 'Plugin update caches were cleared. Go to Dashboard → Updates and click “Check again”.', 'vibe-check' );
+	echo '</p></div>';
+}
+add_action( 'admin_notices', 'vibe_check_admin_notice_plugin_updates_cleared' );

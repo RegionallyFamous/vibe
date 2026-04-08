@@ -12,6 +12,7 @@
 		<testsuite name="vibe-check">
 			<file>tests/QuizDataTest.php</file>
 			<file>tests/ClaudeParseTest.php</file>
+			<file>tests/GitHubUpdaterTest.php</file>
 		</testsuite>
 	</testsuites>
 </phpunit>

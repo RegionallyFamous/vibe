@@ -80,12 +80,13 @@ class GitHub_Plugin_Updater {
 		$this->repo        = self::sanitize_github_repo( isset( $config['repo'] ) ? (string) $config['repo'] : '' );
 		$tok               = isset( $config['token'] ) ? trim( (string) $config['token'] ) : '';
 		$this->token       = strlen( $tok ) > 512 ? substr( $tok, 0, 512 ) : $tok;
-		$this->cache_key   = 'ghu_' . md5( $this->owner . '|' . $this->repo );
 
 		if ( '' === $this->owner || '' === $this->repo ) {
-			_doing_it_wrong( __CLASS__, 'GitHub_Plugin_Updater requires owner and repo.', '1.0.4' );
+			_doing_it_wrong( __CLASS__, 'GitHub_Plugin_Updater requires owner and repo.', '1.0.5' );
 			return;
 		}
+
+		$this->cache_key = self::release_transient_key( $this->owner, $this->repo );
 
 		add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'inject_update' ) );
 		add_filter( 'plugins_api', array( $this, 'plugin_info' ), 20, 3 );
@@ -108,19 +109,82 @@ class GitHub_Plugin_Updater {
 			return $transient;
 		}
 
-		$installed_version = isset( $transient->checked[ $this->plugin_slug ] )
-			? $transient->checked[ $this->plugin_slug ]
-			: '0.0.0';
-		$latest_version    = $this->parse_version( (string) $release['tag_name'] );
+		$latest_version = $this->parse_version( (string) $release['tag_name'] );
+		$zip_url        = $this->get_asset_zip_url( $release );
+		if ( ! $zip_url ) {
+			return $transient;
+		}
 
-		if ( version_compare( $latest_version, $installed_version, '>' ) ) {
-			$zip_url = $this->get_asset_zip_url( $release );
-			if ( $zip_url ) {
-				$transient->response[ $this->plugin_slug ] = $this->build_update_object( $zip_url, $latest_version );
+		$slugs = $this->collect_slugs_for_this_plugin( $transient->checked );
+		foreach ( $slugs as $slug ) {
+			if ( ! isset( $transient->checked[ $slug ] ) ) {
+				continue;
+			}
+			$installed_version = $transient->checked[ $slug ];
+			if ( version_compare( $latest_version, $installed_version, '>' ) ) {
+				$transient->response[ $slug ] = $this->build_update_object( $zip_url, $latest_version );
 			}
 		}
 
 		return $transient;
+	}
+
+	/**
+	 * Transient key used to cache the GitHub /releases/latest JSON (for delete_transient).
+	 *
+	 * @param string $owner Sanitized owner (same rules as config).
+	 * @param string $repo  Sanitized repo.
+	 * @return string
+	 */
+	public static function release_transient_key( $owner, $repo ) {
+		return 'ghu_' . md5( self::sanitize_github_owner( $owner ) . '|' . self::sanitize_github_repo( $repo ) );
+	}
+
+	/**
+	 * Clear same-request memo after external cache bust (Settings link or tests).
+	 *
+	 * @return void
+	 */
+	public static function clear_static_memo() {
+		self::$memo_set     = false;
+		self::$memo_release = null;
+		self::$memo_sig     = '';
+	}
+
+	/**
+	 * Every plugin basename in $checked that resolves to this plugin’s main file (handles renamed folders, symlinks).
+	 *
+	 * @param array<string, string> $checked update_plugins->checked.
+	 * @return string[]
+	 */
+	private function collect_slugs_for_this_plugin( array $checked ) {
+		$our_file = @realpath( $this->plugin_file );
+		if ( ! $our_file || ! defined( 'WP_PLUGIN_DIR' ) ) {
+			return isset( $checked[ $this->plugin_slug ] ) ? array( $this->plugin_slug ) : array();
+		}
+
+		$root = @realpath( WP_PLUGIN_DIR );
+		if ( ! $root ) {
+			return isset( $checked[ $this->plugin_slug ] ) ? array( $this->plugin_slug ) : array();
+		}
+
+		$out = array();
+		foreach ( array_keys( $checked ) as $slug ) {
+			if ( ! is_string( $slug ) || ! preg_match( '#/vibe-check\.php$#', $slug ) ) {
+				continue;
+			}
+			$path = $root . '/' . str_replace( '\\', '/', $slug );
+			$rp   = @realpath( $path );
+			if ( $rp && $rp === $our_file ) {
+				$out[] = $slug;
+			}
+		}
+
+		if ( array() === $out && isset( $checked[ $this->plugin_slug ] ) ) {
+			$out[] = $this->plugin_slug;
+		}
+
+		return array_values( array_unique( $out ) );
 	}
 
 	/**
@@ -186,9 +250,7 @@ class GitHub_Plugin_Updater {
 			in_array( $this->plugin_slug, (array) ( $options['plugins'] ?? array() ), true )
 		) {
 			delete_transient( $this->cache_key );
-			self::$memo_set      = false;
-			self::$memo_release  = null;
-			self::$memo_sig      = '';
+			self::clear_static_memo();
 		}
 	}
 

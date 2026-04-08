@@ -1529,6 +1529,29 @@ function vibe_check_render_settings_page() {
 			</table>
 			<?php submit_button( __( 'Save settings', 'vibe-check' ) ); ?>
 		</form>
+		<?php if ( current_user_can( 'update_plugins' ) && defined( 'VIBE_CHECK_PLUGIN_BASENAME' ) ) : ?>
+			<hr />
+			<h2><?php esc_html_e( 'Plugin updates (GitHub)', 'vibe-check' ); ?></h2>
+			<p class="description">
+				<?php
+				esc_html_e( 'If Dashboard → Updates does not show a new Vibe Check release, clear caches here, then open Updates and click “Check again”. WordPress also caches checks for several hours.', 'vibe-check' );
+				?>
+			</p>
+			<p>
+				<strong><?php esc_html_e( 'Installed plugin file:', 'vibe-check' ); ?></strong>
+				<code><?php echo esc_html( VIBE_CHECK_PLUGIN_BASENAME ); ?></code>
+			</p>
+			<p class="description">
+				<?php
+				esc_html_e( 'Updates attach to this exact path. The plugin folder should be vibe-check with main file vibe-check.php (standard zip layout).', 'vibe-check' );
+				?>
+			</p>
+			<p>
+				<a class="button" href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( 'page' => 'vibe-check', 'vibe_check_clear_plugin_updates' => '1' ), admin_url( 'options-general.php' ) ), 'vibe_check_clear_plugin_updates' ) ); ?>">
+					<?php esc_html_e( 'Clear update caches', 'vibe-check' ); ?>
+				</a>
+			</p>
+		<?php endif; ?>
 	</div>
 	<?php
 }

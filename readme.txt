@@ -3,7 +3,7 @@ Contributors: vibecheck
 Tags: block, quiz, personality, gutenberg, share, claude, ai
 Requires at least: 6.5
 Tested up to: 6.8
-Stable tag: 1.0.4
+Stable tag: 1.0.5
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -46,7 +46,7 @@ You need the compiled assets in `build/` (from `npm run build`). Ship a release 
 
 The plugin checks the [RegionallyFamous/vibe](https://github.com/RegionallyFamous/vibe) **Releases** API (no token needed for this public repo). When a newer semver tag exists and the release includes a **.zip** asset (e.g. `vibe-check.zip`), **Dashboard → Updates** can install it. For a **private** fork or mirror, define a GitHub personal access token in `wp-config.php` as `GITHUB_UPDATER_TOKEN` before the plugin loads.
 
-**If you don’t see an update:** use **Dashboard → Updates → Check again** (WordPress caches update checks for several hours). The GitHub object must be a **published Release** (not only a lightweight tag). The plugin folder should be `wp-content/plugins/vibe-check/` with main file `vibe-check.php` so WordPress matches the update to the right plugin.
+**If you don’t see an update:** use **Dashboard → Updates → Check again** (WordPress caches update checks for several hours). The GitHub object must be a **published Release** (not only a lightweight tag). The plugin folder should be `wp-content/plugins/vibe-check/` with main file `vibe-check.php` so WordPress matches the update to the right plugin. **Settings → Vibe Check → Clear update caches** (if you can update plugins) wipes WordPress’s plugin update transient and the GitHub release cache, then use **Check again** on Updates. The settings screen also shows your **installed plugin basename** (e.g. `vibe-check/vibe-check.php`) so you can confirm it matches a normal install.
 
 = Where are Open Graph images served? =
 
@@ -97,6 +97,12 @@ Keys saved under **Settings → Vibe Check** are stored as a normal WordPress op
 
 == Changelog ==
 
+= 1.0.5 =
+* **GitHub updates** — Match the installed plugin by **real path** (any `…/vibe-check.php` in `update_plugins->checked` that resolves to this plugin), so renamed install folders still receive update offers.
+* **GitHub updates** — **Settings → Vibe Check → Clear update caches** (for users who can update plugins) wipes WordPress’s plugin update transient and the GitHub release JSON cache; the screen shows your **installed plugin basename** (e.g. `vibe-check/vibe-check.php`).
+* **Developer** — `VIBE_CHECK_GITHUB_OWNER` / `VIBE_CHECK_GITHUB_REPO` constants; `GitHub_Plugin_Updater::release_transient_key()` and `clear_static_memo()` for cache control.
+* **Tests** — PHPUnit coverage for the GitHub updater (mocked HTTP); optional live API check; `scripts/verify-github-release.php` and `npm run verify:github-release`.
+
 = 1.0.4 =
 * **Performance** — Transient cache for the **sanitized** quiz derived from post content (`vibe_check_get_sanitized_quiz_from_post`), so `?quiz_result=` meta and the OG JPEG endpoint avoid re-running the full sanitizer on every request after the first.
 * **OG image REST** — `Content-Length` and `X-Content-Type-Options: nosniff` on JPEG responses for clearer client/CDN behavior.
@@ -122,6 +128,9 @@ Keys saved under **Settings → Vibe Check** are stored as a normal WordPress op
 * **Safety & limits** — Sanitized quiz payload, size limits on REST and `data-quiz`, generation and OG JPEG rate limiting, uninstall option cleanup.
 
 == Upgrade Notice ==
+
+= 1.0.5 =
+Clear stale update caches from Settings if Dashboard → Updates misses a release; better matching when the plugin folder was renamed.
 
 = 1.0.4 =
 Faster OG/quiz meta paths, tighter GitHub updater response handling, and cleaner uninstall.
