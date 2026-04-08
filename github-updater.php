@@ -18,6 +18,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 class GitHub_Plugin_Updater {
 
 	/**
+	 * Same-request memo for inject_update + plugins_api (avoids duplicate HTTP).
+	 *
+	 * @var bool
+	 */
+	private static $memo_set = false;
+
+	/**
+	 * @var array|null
+	 */
+	private static $memo_release;
+
+	/**
+	 * @var string
+	 */
+	private static $memo_sig = '';
+
+	/**
 	 * @var string
 	 */
 	private $plugin_file;
@@ -59,13 +76,14 @@ class GitHub_Plugin_Updater {
 	public function __construct( $plugin_file, array $config ) {
 		$this->plugin_file = $plugin_file;
 		$this->plugin_slug = plugin_basename( $plugin_file );
-		$this->owner       = isset( $config['owner'] ) ? (string) $config['owner'] : '';
-		$this->repo        = isset( $config['repo'] ) ? (string) $config['repo'] : '';
-		$this->token       = isset( $config['token'] ) ? (string) $config['token'] : '';
-		$this->cache_key   = 'ghu_' . md5( $this->owner . $this->repo );
+		$this->owner       = self::sanitize_github_owner( isset( $config['owner'] ) ? (string) $config['owner'] : '' );
+		$this->repo        = self::sanitize_github_repo( isset( $config['repo'] ) ? (string) $config['repo'] : '' );
+		$tok               = isset( $config['token'] ) ? trim( (string) $config['token'] ) : '';
+		$this->token       = strlen( $tok ) > 512 ? substr( $tok, 0, 512 ) : $tok;
+		$this->cache_key   = 'ghu_' . md5( $this->owner . '|' . $this->repo );
 
 		if ( '' === $this->owner || '' === $this->repo ) {
-			_doing_it_wrong( __CLASS__, 'GitHub_Plugin_Updater requires owner and repo.', '1.0.1' );
+			_doing_it_wrong( __CLASS__, 'GitHub_Plugin_Updater requires owner and repo.', '1.0.2' );
 			return;
 		}
 
@@ -129,6 +147,10 @@ class GitHub_Plugin_Updater {
 		}
 
 		$zip_url = $this->get_asset_zip_url( $release );
+		if ( ! $zip_url ) {
+			return $result;
+		}
+
 		$version = $this->parse_version( (string) $release['tag_name'] );
 		$info    = get_plugin_data( $this->plugin_file );
 
@@ -164,38 +186,115 @@ class GitHub_Plugin_Updater {
 			in_array( $this->plugin_slug, (array) ( $options['plugins'] ?? array() ), true )
 		) {
 			delete_transient( $this->cache_key );
+			self::$memo_set      = false;
+			self::$memo_release  = null;
+			self::$memo_sig      = '';
 		}
+	}
+
+	/**
+	 * GitHub username / org segment (defensive; used in URL only).
+	 *
+	 * @param string $raw Raw owner.
+	 * @return string
+	 */
+	private static function sanitize_github_owner( $raw ) {
+		$s = strtolower( preg_replace( '/[^a-z0-9-]/', '', (string) $raw ) );
+		return substr( $s, 0, 39 );
+	}
+
+	/**
+	 * Repository name segment.
+	 *
+	 * @param string $raw Raw repo.
+	 * @return string
+	 */
+	private static function sanitize_github_repo( $raw ) {
+		$s = strtolower( preg_replace( '/[^a-z0-9._-]/', '', (string) $raw ) );
+		return substr( $s, 0, 100 );
+	}
+
+	/**
+	 * Only trust package URLs on GitHub-controlled hosts (malicious API JSON SSRF guard).
+	 *
+	 * @param string $url Candidate download URL.
+	 * @return bool
+	 */
+	private function is_trusted_github_package_url( $url ) {
+		$url = trim( (string) $url );
+		if ( '' === $url || ! wp_http_validate_url( $url ) ) {
+			return false;
+		}
+		if ( 0 !== stripos( $url, 'https://' ) ) {
+			return false;
+		}
+		$host = wp_parse_url( $url, PHP_URL_HOST );
+		if ( ! is_string( $host ) || '' === $host ) {
+			return false;
+		}
+		$host = strtolower( $host );
+		if ( in_array( $host, array( 'github.com', 'www.github.com', 'codeload.github.com' ), true ) ) {
+			return true;
+		}
+		$suffix = '.githubusercontent.com';
+		$slen   = strlen( $suffix );
+		if ( strlen( $host ) > $slen && substr( $host, -$slen ) === $suffix ) {
+			return true;
+		}
+		return false;
 	}
 
 	/**
 	 * @return array|null
 	 */
 	private function get_latest_release() {
-		$cached = get_transient( $this->cache_key );
-		if ( false !== $cached ) {
-			return $cached ? $cached : null;
+		$sig = $this->owner . '/' . $this->repo;
+		if ( self::$memo_set && self::$memo_sig === $sig ) {
+			return self::$memo_release;
 		}
 
-		$url      = 'https://api.github.com/repos/' . $this->owner . '/' . $this->repo . '/releases/latest';
+		$cached = get_transient( $this->cache_key );
+		if ( false !== $cached ) {
+			$out = $cached ? $cached : null;
+			self::$memo_set     = true;
+			self::$memo_sig     = $sig;
+			self::$memo_release = $out;
+			return $out;
+		}
+
+		$url      = 'https://api.github.com/repos/' . rawurlencode( $this->owner ) . '/' . rawurlencode( $this->repo ) . '/releases/latest';
 		$args     = array(
-			'headers' => $this->request_headers(),
-			'timeout' => 10,
+			'headers'            => $this->request_headers(),
+			'timeout'            => 10,
+			'redirection'        => 2,
+			'sslverify'          => true,
+			'reject_unsafe_urls' => true,
 		);
 		$response = wp_remote_get( $url, $args );
 
 		if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
 			set_transient( $this->cache_key, array(), 5 * MINUTE_IN_SECONDS );
+			self::$memo_set     = true;
+			self::$memo_sig     = $sig;
+			self::$memo_release = null;
 			return null;
 		}
 
-		$release = json_decode( wp_remote_retrieve_body( $response ), true );
+		$body    = wp_remote_retrieve_body( $response );
+		$release = json_decode( $body, true, 32 );
 
-		if ( empty( $release['tag_name'] ) || ! is_array( $release ) ) {
+		if ( JSON_ERROR_NONE !== json_last_error() || empty( $release['tag_name'] ) || ! is_array( $release ) ) {
 			set_transient( $this->cache_key, array(), 5 * MINUTE_IN_SECONDS );
+			self::$memo_set     = true;
+			self::$memo_sig     = $sig;
+			self::$memo_release = null;
 			return null;
 		}
 
 		set_transient( $this->cache_key, $release, $this->cache_ttl );
+		self::$memo_set     = true;
+		self::$memo_sig     = $sig;
+		self::$memo_release = $release;
 		return $release;
 	}
 
@@ -210,11 +309,21 @@ class GitHub_Plugin_Updater {
 			}
 			$name = strtolower( (string) $asset['name'] );
 			if ( strlen( $name ) >= 4 && substr( $name, -4 ) === '.zip' ) {
-				return isset( $asset['browser_download_url'] ) ? (string) $asset['browser_download_url'] : null;
+				$u = isset( $asset['browser_download_url'] ) ? (string) $asset['browser_download_url'] : '';
+				if ( $u && $this->is_trusted_github_package_url( $u ) ) {
+					return $u;
+				}
 			}
 		}
 
-		return isset( $release['zipball_url'] ) ? (string) $release['zipball_url'] : null;
+		if ( ! empty( $release['zipball_url'] ) ) {
+			$zb = (string) $release['zipball_url'];
+			if ( $this->is_trusted_github_package_url( $zb ) ) {
+				return $zb;
+			}
+		}
+
+		return null;
 	}
 
 	/**
@@ -253,6 +362,7 @@ class GitHub_Plugin_Updater {
 	 * @return string
 	 */
 	private function parse_version( $tag ) {
+		$tag = substr( (string) $tag, 0, 80 );
 		return ltrim( $tag, 'vV' );
 	}
 
@@ -263,6 +373,10 @@ class GitHub_Plugin_Updater {
 	private function format_changelog( $body ) {
 		if ( '' === $body ) {
 			return '<p>See release notes on GitHub.</p>';
+		}
+
+		if ( strlen( $body ) > 65536 ) {
+			$body = substr( $body, 0, 65536 ) . "\n\n…";
 		}
 
 		$body = htmlspecialchars( $body, ENT_QUOTES, 'UTF-8' );

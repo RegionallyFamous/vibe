@@ -3,7 +3,7 @@
  * Plugin Name:       Vibe Check
  * Plugin URI:        https://github.com/RegionallyFamous/vibe
  * Description:       Personality-style quiz block with shareable result cards and optional OG images.
- * Version:           1.0.1
+ * Version:           1.0.2
  * Requires at least: 6.5
  * Requires PHP:      7.4
  * Author:            Vibe Check
@@ -31,7 +31,7 @@ new GitHub_Plugin_Updater(
 	)
 );
 
-define( 'VIBE_CHECK_VERSION', '1.0.1' );
+define( 'VIBE_CHECK_VERSION', '1.0.2' );
 define( 'VIBE_CHECK_PLUGIN_FILE', __FILE__ );
 define( 'VIBE_CHECK_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'VIBE_CHECK_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -63,35 +63,23 @@ function vibe_check_register_block() {
 add_action( 'init', 'vibe_check_register_block' );
 
 /**
- * Allow translated strings in the front-end view script (wp-i18n).
+ * One registry lookup: wp-i18n JSON + localized share strings for the view script.
  */
-function vibe_check_set_view_script_translations() {
-	if ( ! function_exists( 'wp_set_script_translations' ) ) {
-		return;
-	}
+function vibe_check_init_view_script_i18n_and_share_strings() {
 	$registry = WP_Block_Type_Registry::get_instance();
 	$block    = $registry->get_registered( 'vibe-check/quiz' );
 	if ( ! $block || empty( $block->view_script_handles ) ) {
 		return;
 	}
-	foreach ( $block->view_script_handles as $handle ) {
-		wp_set_script_translations(
-			$handle,
-			'vibe-check',
-			VIBE_CHECK_PLUGIN_DIR . 'languages'
-		);
-	}
-}
-add_action( 'init', 'vibe_check_set_view_script_translations', 20 );
 
-/**
- * Localize invitation lines and hashtags for front-end share copy (see vibe_check_share_strings).
- */
-function vibe_check_localize_view_share_strings() {
-	$registry = WP_Block_Type_Registry::get_instance();
-	$block    = $registry->get_registered( 'vibe-check/quiz' );
-	if ( ! $block || empty( $block->view_script_handles ) ) {
-		return;
+	if ( function_exists( 'wp_set_script_translations' ) ) {
+		foreach ( $block->view_script_handles as $handle ) {
+			wp_set_script_translations(
+				$handle,
+				'vibe-check',
+				VIBE_CHECK_PLUGIN_DIR . 'languages'
+			);
+		}
 	}
 
 	$defaults = array(
@@ -112,7 +100,7 @@ function vibe_check_localize_view_share_strings() {
 		wp_localize_script( $handle, 'vibeCheckShare', $out );
 	}
 }
-add_action( 'init', 'vibe_check_localize_view_share_strings', 20 );
+add_action( 'init', 'vibe_check_init_view_script_i18n_and_share_strings', 20 );
 
 /**
  * Google Fonts for quiz UI (aligned with Tier4.club theme: Big Shoulders Display, Space Mono).

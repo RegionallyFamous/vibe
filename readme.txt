@@ -3,7 +3,7 @@ Contributors: vibecheck
 Tags: block, quiz, personality, gutenberg, share, claude, ai
 Requires at least: 6.5
 Tested up to: 6.8
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -95,6 +95,10 @@ Keys saved under **Settings → Vibe Check** are stored as a normal WordPress op
 
 == Changelog ==
 
+= 1.0.2 =
+* **GitHub updater** — Sanitize owner/repo for API URLs; only accept **HTTPS** package links on GitHub-controlled hosts (blocks rogue zip URLs from API JSON). Stricter HTTP client defaults; bounded JSON decode depth; capped changelog body and tag length; PAT length cap; skip plugin details modal when no trusted zip.
+* **Performance** — Same-request memo so update checks don’t call the GitHub API twice; single `init` pass for view-script translations + share strings; prime attachment **postmeta** when enriching result images (fewer queries).
+
 = 1.0.1 =
 * **Updates** — GitHub Releases integration (`github-updater.php`): **Dashboard → Updates** can install new versions from [RegionallyFamous/vibe](https://github.com/RegionallyFamous/vibe) when a release includes a `.zip` asset. Public repo needs no token; optional `GITHUB_UPDATER_TOKEN` in `wp-config.php` for private mirrors.
 * **Share** — Removed front-end **Save image** download control; tightened quiz JSON validation on the client; **X** icon uses a reliable stroke mark; **Facebook** share uses `sharer.php` (fixes broken shares from `sharer/sharer.php` on many hosts).
@@ -106,6 +110,9 @@ Keys saved under **Settings → Vibe Check** are stored as a normal WordPress op
 * **Safety & limits** — Sanitized quiz payload, size limits on REST and `data-quiz`, generation and OG JPEG rate limiting, uninstall option cleanup.
 
 == Upgrade Notice ==
+
+= 1.0.2 =
+Hardened GitHub updater and small performance improvements for updates and quiz media.
 
 = 1.0.1 =
 GitHub-based updates, share row tweaks (no Save image), and Facebook share URL fix.

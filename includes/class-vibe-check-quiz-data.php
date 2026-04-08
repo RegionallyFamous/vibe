@@ -316,6 +316,9 @@ function vibe_check_enrich_quiz_results_media( array $quiz ) {
 	if ( $prime_ids && function_exists( '_prime_post_caches' ) ) {
 		_prime_post_caches( $prime_ids, false );
 	}
+	if ( $prime_ids && function_exists( 'update_meta_cache' ) ) {
+		update_meta_cache( 'post', $prime_ids );
+	}
 	foreach ( $quiz['results'] as $i => $row ) {
 		if ( ! is_array( $row ) ) {
 			continue;
