@@ -91,6 +91,46 @@ function vibe_check_is_valid_result_for_post( $post_id, $result_id ) {
 }
 
 /**
+ * Locale string for og:locale (Facebook / Open Graph).
+ *
+ * @return string
+ */
+function vibe_check_og_locale_string() {
+	$loc = get_locale();
+	if ( ! is_string( $loc ) || '' === $loc ) {
+		return 'en_US';
+	}
+	return str_replace( '-', '_', $loc );
+}
+
+/**
+ * Short plain-text description for a singular post (excerpt or trimmed content).
+ *
+ * @param WP_Post $post Post.
+ * @return string
+ */
+function vibe_check_get_post_social_description( WP_Post $post ) {
+	$raw = get_the_excerpt( $post );
+	if ( ! is_string( $raw ) ) {
+		$raw = '';
+	}
+	$raw = wp_strip_all_tags( $raw );
+	if ( '' === trim( $raw ) ) {
+		$raw = wp_strip_all_tags( (string) $post->post_content );
+		$raw = wp_trim_words( $raw, 40, '…' );
+	}
+	$raw = trim( (string) $raw );
+	/**
+	 * Plain-text description for quiz landing Open Graph / Twitter (no ?quiz_result=).
+	 *
+	 * @param string  $description Candidate description.
+	 * @param WP_Post $post        Post.
+	 */
+	$raw = (string) apply_filters( 'vibe_check_quiz_landing_og_description', $raw, $post );
+	return vibe_check_truncate_utf8( $raw, 300 );
+}
+
+/**
  * Quiz + result row for OG / Twitter text when ?quiz_result= is valid.
  *
  * @param int    $post_id   Post ID.
@@ -707,10 +747,29 @@ function vibe_check_output_result_og_tags() {
 		$url
 	);
 
+	$site_name = get_bloginfo( 'name', 'display' );
+	$site_name = is_string( $site_name ) ? vibe_check_truncate_utf8( $site_name, 200 ) : '';
+
+	$img_alt = $og_title;
+	/**
+	 * Alt text for the generated result OG/Twitter image (accessibility + some crawlers).
+	 *
+	 * @param string $img_alt   Default: same as og:title.
+	 * @param int    $post_id   Post ID.
+	 * @param string $result_id Result id.
+	 * @param array  $ctx       Result context from vibe_check_get_quiz_result_context.
+	 */
+	$img_alt = (string) apply_filters( 'vibe_check_og_result_image_alt', $img_alt, $post_id, $result_id, $ctx );
+	$img_alt = vibe_check_truncate_utf8( $img_alt, 200 );
+
 	echo '<meta property="og:title" content="' . esc_attr( $og_title ) . '" />' . "\n";
 	echo '<meta property="og:description" content="' . esc_attr( $og_desc ) . '" />' . "\n";
 	echo '<meta property="og:url" content="' . esc_url( $share_url ) . '" />' . "\n";
 	echo '<meta property="og:type" content="article" />' . "\n";
+	if ( '' !== $site_name ) {
+		echo '<meta property="og:site_name" content="' . esc_attr( $site_name ) . '" />' . "\n";
+	}
+	echo '<meta property="og:locale" content="' . esc_attr( vibe_check_og_locale_string() ) . '" />' . "\n";
 
 	echo '<meta name="twitter:card" content="summary_large_image" />' . "\n";
 	echo '<meta name="twitter:title" content="' . esc_attr( $og_title ) . '" />' . "\n";
@@ -719,7 +778,9 @@ function vibe_check_output_result_og_tags() {
 	echo '<meta property="og:image" content="' . esc_url( $url ) . '" />' . "\n";
 	echo '<meta property="og:image:width" content="1200" />' . "\n";
 	echo '<meta property="og:image:height" content="630" />' . "\n";
+	echo '<meta property="og:image:alt" content="' . esc_attr( $img_alt ) . '" />' . "\n";
 	echo '<meta name="twitter:image" content="' . esc_url( $url ) . '" />' . "\n";
+	echo '<meta name="twitter:image:alt" content="' . esc_attr( $img_alt ) . '" />' . "\n";
 }
 add_action( 'wp_head', 'vibe_check_output_result_og_tags', 5 );
 
@@ -790,6 +851,15 @@ function vibe_check_output_quiz_default_og_tags() {
 		return;
 	}
 
+	/**
+	 * Whether to print og:title / og:description / og:url for the quiz landing URL.
+	 * Return false if a full-featured SEO plugin already outputs these (avoids duplicate tags).
+	 *
+	 * @param bool    $print Default true.
+	 * @param WP_Post $post  Post.
+	 */
+	$print_text_meta = (bool) apply_filters( 'vibe_check_quiz_landing_open_graph_text', true, $post );
+
 	$meta = wp_get_attachment_metadata( $id );
 	$w    = isset( $meta['width'] ) ? (int) $meta['width'] : 1200;
 	$h    = isset( $meta['height'] ) ? (int) $meta['height'] : 630;
@@ -803,6 +873,46 @@ function vibe_check_output_quiz_default_og_tags() {
 	$alt = get_post_meta( $id, '_wp_attachment_image_alt', true );
 	$alt = is_string( $alt ) ? vibe_check_truncate_utf8( trim( $alt ), 200 ) : '';
 
+	$permalink = get_permalink( $post );
+	if ( ! is_string( $permalink ) || '' === $permalink ) {
+		$permalink = home_url( '/' );
+	}
+
+	$site_name = get_bloginfo( 'name', 'display' );
+	$site_name = is_string( $site_name ) ? vibe_check_truncate_utf8( $site_name, 200 ) : '';
+
+	if ( $print_text_meta ) {
+		$og_title = get_the_title( $post );
+		$og_title = is_string( $og_title ) ? vibe_check_truncate_utf8( $og_title, 200 ) : '';
+		/**
+		 * Title for quiz landing Open Graph / Twitter (no ?quiz_result=).
+		 *
+		 * @param string  $title Post title (truncated).
+		 * @param WP_Post $post  Post.
+		 */
+		$og_title = (string) apply_filters( 'vibe_check_quiz_landing_og_title', $og_title, $post );
+		$og_title = vibe_check_truncate_utf8( $og_title, 200 );
+
+		$og_desc = vibe_check_get_post_social_description( $post );
+
+		echo '<meta property="og:title" content="' . esc_attr( $og_title ) . '" />' . "\n";
+		echo '<meta property="og:description" content="' . esc_attr( $og_desc ) . '" />' . "\n";
+		echo '<meta property="og:url" content="' . esc_url( $permalink ) . '" />' . "\n";
+		echo '<meta property="og:type" content="article" />' . "\n";
+		if ( '' !== $site_name ) {
+			echo '<meta property="og:site_name" content="' . esc_attr( $site_name ) . '" />' . "\n";
+		}
+		echo '<meta property="og:locale" content="' . esc_attr( vibe_check_og_locale_string() ) . '" />' . "\n";
+
+		echo '<meta name="twitter:title" content="' . esc_attr( $og_title ) . '" />' . "\n";
+		echo '<meta name="twitter:description" content="' . esc_attr( $og_desc ) . '" />' . "\n";
+	}
+
+	if ( '' === $alt ) {
+		$fallback_title = get_the_title( $post );
+		$alt = is_string( $fallback_title ) ? vibe_check_truncate_utf8( trim( $fallback_title ), 200 ) : '';
+	}
+
 	echo '<meta name="twitter:card" content="summary_large_image" />' . "\n";
 	echo '<meta property="og:image" content="' . esc_url( $url ) . '" />' . "\n";
 	echo '<meta property="og:image:width" content="' . esc_attr( (string) $w ) . '" />' . "\n";
@@ -810,6 +920,7 @@ function vibe_check_output_quiz_default_og_tags() {
 	echo '<meta name="twitter:image" content="' . esc_url( $url ) . '" />' . "\n";
 	if ( '' !== $alt ) {
 		echo '<meta property="og:image:alt" content="' . esc_attr( $alt ) . '" />' . "\n";
+		echo '<meta name="twitter:image:alt" content="' . esc_attr( $alt ) . '" />' . "\n";
 	}
 }
 add_action( 'wp_head', 'vibe_check_output_quiz_default_og_tags', 4 );

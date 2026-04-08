@@ -81,13 +81,17 @@ Cache keys include post ID, a hash of post content, `result_id`, and a generatio
 
 * **Result row** — Native `<a href>` links (no JavaScript required) open **X**, **Facebook**, and **Reddit** intents with copy that includes your result plus an invitation to take the quiz. Optional **hashtags** from `vibe_check_share_hashtags` are folded into the X post text (when they fit) and the Reddit title.
 * **Instagram / TikTok** — There is no universal “post this URL” API; visitors can take a screenshot, open the app, and paste the quiz link from the address bar (or use a link sticker / bio link as the platform allows).
-* **Link previews** — Shared URLs with `?quiz_result=` include `og:image` (quiz JPEG), title, and description. A short **“Take the quiz…”** line is appended to the description for scroll-stopping snippets (filterable). The **default share image** from Settings applies to the plain quiz page URL (see FAQ).
+* **Link previews** — Shared URLs with `?quiz_result=` include `og:image` (quiz JPEG), title, description, `og:site_name`, `og:locale`, and image alt text (`og:image:alt` / `twitter:image:alt`). A short **“Take the quiz…”** line is appended to the description for scroll-stopping snippets (filterable). The **default share image** from Settings applies to the plain quiz page URL; the plugin can also output matching OG/Twitter **text** tags for that URL when no SEO plugin already does (see filters).
 
 **Filters**
 
 * **`vibe_check_share_strings`** — (array) Override `invitationShort`, `invitationLong`, and/or `hashtags` passed to the front-end script (default strings are translated in PHP).
 * **`vibe_check_share_hashtags`** — (string) Optional hashtag line appended to the long share caption (runs before `vibe_check_share_strings` merges `hashtags`).
 * **`vibe_check_og_result_description`** — (string) Final Open Graph / Twitter description for valid `?quiz_result=` URLs, after the plugin appends its CTA. Args: `$og_desc`, `$post_id`, `$result_id`, `$ctx`.
+* **`vibe_check_og_result_image_alt`** — (string) Alt text for the generated result `og:image` / `twitter:image`. Args: `$img_alt`, `$post_id`, `$result_id`, `$ctx`.
+* **`vibe_check_quiz_landing_open_graph_text`** — (bool) When `true` (default), print `og:title`, `og:description`, `og:url`, `og:type`, `og:site_name`, `og:locale`, and matching Twitter title/description on the quiz landing URL (no `?quiz_result=`). Set `false` if your SEO plugin already outputs those to avoid duplicates. Args: `$print`, `$post`.
+* **`vibe_check_quiz_landing_og_title`** — (string) OG/Twitter title for the quiz landing URL. Args: `$title`, `$post`.
+* **`vibe_check_quiz_landing_og_description`** — (string) Plain-text OG/Twitter description for the quiz landing (excerpt or trimmed content before truncation). Args: `$description`, `$post`.
 * **`vibe_check_default_share_image_attachment_id`** — (int) Attachment ID from Settings (or override). Return `0` to skip default `og:image` tags.
 * **`vibe_check_default_share_image_url`** — (string) Image URL for default share preview. Args: `$url`, `$attachment_id`, `$post_id` (context; `0` if not singular).
 
