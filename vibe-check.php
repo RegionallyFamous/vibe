@@ -3,11 +3,11 @@
  * Plugin Name:       Vibe Check
  * Plugin URI:        https://github.com/RegionallyFamous/vibe
  * Description:       Personality-style quiz block with shareable result cards and optional OG images.
- * Version:           1.0.5
+ * Version:           1.0.6
  * Requires at least: 6.5
  * Requires PHP:      7.4
- * Author:            Vibe Check
- * Author URI:        https://profiles.wordpress.org/vibecheck/
+ * Author:            Regionally Famous
+ * Author URI:        https://github.com/RegionallyFamous/vibe
  * License:           GPL v2 or later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       vibe-check
@@ -35,7 +35,7 @@ new GitHub_Plugin_Updater(
 	)
 );
 
-define( 'VIBE_CHECK_VERSION', '1.0.5' );
+define( 'VIBE_CHECK_VERSION', '1.0.6' );
 define( 'VIBE_CHECK_PLUGIN_FILE', __FILE__ );
 define( 'VIBE_CHECK_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'VIBE_CHECK_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

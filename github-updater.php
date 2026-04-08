@@ -82,7 +82,7 @@ class GitHub_Plugin_Updater {
 		$this->token       = strlen( $tok ) > 512 ? substr( $tok, 0, 512 ) : $tok;
 
 		if ( '' === $this->owner || '' === $this->repo ) {
-			_doing_it_wrong( __CLASS__, 'GitHub_Plugin_Updater requires owner and repo.', '1.0.5' );
+			_doing_it_wrong( __CLASS__, 'GitHub_Plugin_Updater requires owner and repo.', '1.0.6' );
 			return;
 		}
 

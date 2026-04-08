@@ -1,9 +1,9 @@
 === Vibe Check ===
-Contributors: vibecheck
+Contributors: regionallyfamous
 Tags: block, quiz, personality, gutenberg, share, claude, ai
 Requires at least: 6.5
 Tested up to: 6.8
-Stable tag: 1.0.5
+Stable tag: 1.0.6
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -18,7 +18,7 @@ A Gutenberg block for personality-style quizzes. Generate quizzes with **Anthrop
 * **Share** — One-tap links for **X, Facebook, and Reddit**. Share copy invites friends to take the quiz; filters let you tune invitation lines and hashtags.
 * **Link previews** — `?quiz_result=` adds `og:title`, `og:description`, `og:image`, and Twitter tags for social crawlers. **Settings → Default share image** sets `og:image` for the quiz page URL before someone takes the quiz (no query string).
 
-Replace the Contributors line with your WordPress.org username before submitting to the plugin directory.
+Contributors uses the WordPress.org–style slug `regionallyfamous`; change it if you submit to the plugin directory under a different username.
 
 == Installation ==
 
@@ -97,6 +97,9 @@ Keys saved under **Settings → Vibe Check** are stored as a normal WordPress op
 
 == Changelog ==
 
+= 1.0.6 =
+* **Metadata** — Plugin author **Regionally Famous** with **Author URI** https://github.com/RegionallyFamous/vibe. Readme Contributors slug and package/composer author fields aligned.
+
 = 1.0.5 =
 * **GitHub updates** — Match the installed plugin by **real path** (any `…/vibe-check.php` in `update_plugins->checked` that resolves to this plugin), so renamed install folders still receive update offers.
 * **GitHub updates** — **Settings → Vibe Check → Clear update caches** (for users who can update plugins) wipes WordPress’s plugin update transient and the GitHub release JSON cache; the screen shows your **installed plugin basename** (e.g. `vibe-check/vibe-check.php`).
@@ -128,6 +131,9 @@ Keys saved under **Settings → Vibe Check** are stored as a normal WordPress op
 * **Safety & limits** — Sanitized quiz payload, size limits on REST and `data-quiz`, generation and OG JPEG rate limiting, uninstall option cleanup.
 
 == Upgrade Notice ==
+
+= 1.0.6 =
+Author and contributor metadata point to Regionally Famous / GitHub; no functional changes.
 
 = 1.0.5 =
 Clear stale update caches from Settings if Dashboard → Updates misses a release; better matching when the plugin folder was renamed.
