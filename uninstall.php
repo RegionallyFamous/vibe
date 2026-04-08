@@ -11,9 +11,9 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 
 global $wpdb;
 
-// Rate-limit transients for the OG image endpoint (see vibe_check_og_rate_limit_ok).
+// Plugin transients (OG rate limits, quiz attrs/sanitized cache, Claude cache, GitHub updater release cache).
 $wpdb->query(
-	"DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_vibe_check_%' OR option_name LIKE '_transient_timeout_vibe_check_%'"
+	"DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_vibe_check_%' OR option_name LIKE '_transient_timeout_vibe_check_%' OR option_name LIKE '_transient_ghu_%' OR option_name LIKE '_transient_timeout_ghu_%'"
 );
 
 delete_option( 'vibe_check_claude_api_key' );

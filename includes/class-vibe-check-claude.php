@@ -1344,7 +1344,7 @@ add_action( 'rest_api_init', 'vibe_check_register_claude_routes' );
  * Settings: register option.
  */
 function vibe_check_register_claude_settings() {
-		register_setting(
+	register_setting(
 		'vibe_check_settings',
 		VIBE_CHECK_OPTION_CLAUDE_KEY,
 		array(

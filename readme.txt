@@ -3,7 +3,7 @@ Contributors: vibecheck
 Tags: block, quiz, personality, gutenberg, share, claude, ai
 Requires at least: 6.5
 Tested up to: 6.8
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -97,6 +97,13 @@ Keys saved under **Settings → Vibe Check** are stored as a normal WordPress op
 
 == Changelog ==
 
+= 1.0.4 =
+* **Performance** — Transient cache for the **sanitized** quiz derived from post content (`vibe_check_get_sanitized_quiz_from_post`), so `?quiz_result=` meta and the OG JPEG endpoint avoid re-running the full sanitizer on every request after the first.
+* **OG image REST** — `Content-Length` and `X-Content-Type-Options: nosniff` on JPEG responses for clearer client/CDN behavior.
+* **GitHub updater** — Reject release API responses larger than 2 MiB before JSON decode (abuse / error guard).
+* **Uninstall** — Remove `ghu_` updater transients in addition to `vibe_check_` transients.
+* **Housekeeping** — Fix indentation in Claude settings registration.
+
 = 1.0.3 =
 * **GitHub updater** — Fix owner/repo sanitization: normalize case **before** stripping characters so mixed-case org names (e.g. `RegionallyFamous`) resolve to the correct API path. Allow **api.github.com** zipball URLs when a release has no `.zip` asset (fallback package URL).
 
@@ -115,6 +122,9 @@ Keys saved under **Settings → Vibe Check** are stored as a normal WordPress op
 * **Safety & limits** — Sanitized quiz payload, size limits on REST and `data-quiz`, generation and OG JPEG rate limiting, uninstall option cleanup.
 
 == Upgrade Notice ==
+
+= 1.0.4 =
+Faster OG/quiz meta paths, tighter GitHub updater response handling, and cleaner uninstall.
 
 = 1.0.3 =
 Critical fix for GitHub-based updates when the repository owner name contains uppercase letters.

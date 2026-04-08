@@ -83,7 +83,7 @@ class GitHub_Plugin_Updater {
 		$this->cache_key   = 'ghu_' . md5( $this->owner . '|' . $this->repo );
 
 		if ( '' === $this->owner || '' === $this->repo ) {
-			_doing_it_wrong( __CLASS__, 'GitHub_Plugin_Updater requires owner and repo.', '1.0.3' );
+			_doing_it_wrong( __CLASS__, 'GitHub_Plugin_Updater requires owner and repo.', '1.0.4' );
 			return;
 		}
 
@@ -282,7 +282,15 @@ class GitHub_Plugin_Updater {
 			return null;
 		}
 
-		$body    = wp_remote_retrieve_body( $response );
+		$body = wp_remote_retrieve_body( $response );
+		if ( strlen( $body ) > 2097152 ) {
+			set_transient( $this->cache_key, array(), 5 * MINUTE_IN_SECONDS );
+			self::$memo_set     = true;
+			self::$memo_sig     = $sig;
+			self::$memo_release = null;
+			return null;
+		}
+
 		$release = json_decode( $body, true, 32 );
 
 		if ( JSON_ERROR_NONE !== json_last_error() || empty( $release['tag_name'] ) || ! is_array( $release ) ) {

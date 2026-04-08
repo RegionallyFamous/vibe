@@ -58,6 +58,28 @@ function vibe_check_get_quiz_attrs_from_post( WP_Post $post ) {
 }
 
 /**
+ * Sanitized quiz for the first block in a post, transient-cached (same key basis as attrs).
+ *
+ * @param WP_Post $post Post.
+ * @return array{ title: string, subtitle: string, questions: array, results: array }|null Null if no quiz block.
+ */
+function vibe_check_get_sanitized_quiz_from_post( WP_Post $post ) {
+	$attrs = vibe_check_get_quiz_attrs_from_post( $post );
+	if ( null === $attrs ) {
+		return null;
+	}
+	$hash   = md5( (string) $post->post_content );
+	$ckey   = 'vibe_check_sq_' . (int) $post->ID . '_' . $hash;
+	$cached = get_transient( $ckey );
+	if ( is_array( $cached ) ) {
+		return $cached;
+	}
+	$quiz = vibe_check_sanitize_quiz_payload( $attrs );
+	set_transient( $ckey, $quiz, DAY_IN_SECONDS );
+	return $quiz;
+}
+
+/**
  * Whether the post exposes a valid quiz result id (for OG meta).
  *
  * @param int    $post_id   Post ID.
@@ -80,11 +102,10 @@ function vibe_check_get_quiz_result_context( $post_id, $result_id ) {
 	if ( ! $post ) {
 		return null;
 	}
-	$attrs = vibe_check_get_quiz_attrs_from_post( $post );
-	if ( null === $attrs ) {
+	$sanitized = vibe_check_get_sanitized_quiz_from_post( $post );
+	if ( null === $sanitized ) {
 		return null;
 	}
-	$sanitized = vibe_check_sanitize_quiz_payload( $attrs );
 	$result_id = sanitize_key( (string) $result_id );
 	foreach ( $sanitized['results'] as $r ) {
 		if ( isset( $r['id'] ) && (string) $r['id'] === $result_id ) {
@@ -377,12 +398,11 @@ function vibe_check_og_image_handler( WP_REST_Request $request ) {
 		return new WP_Error( 'not_found', 'Post not found', array( 'status' => 404 ) );
 	}
 
-	$attrs = vibe_check_get_quiz_attrs_from_post( $post );
-	if ( null === $attrs ) {
+	$sanitized = vibe_check_get_sanitized_quiz_from_post( $post );
+	if ( null === $sanitized ) {
 		return new WP_Error( 'not_found', 'Quiz not found', array( 'status' => 404 ) );
 	}
 
-	$sanitized  = vibe_check_sanitize_quiz_payload( $attrs );
 	$results    = $sanitized['results'];
 	$quiz_title = $sanitized['title'];
 
@@ -407,8 +427,10 @@ function vibe_check_og_image_handler( WP_REST_Request $request ) {
 			$cached_jpeg,
 			200,
 			array(
-				'Content-Type'  => 'image/jpeg',
-				'Cache-Control' => 'public, max-age=31536000',
+				'Content-Type'     => 'image/jpeg',
+				'Cache-Control'    => 'public, max-age=31536000',
+				'Content-Length'   => (string) strlen( $cached_jpeg ),
+				'X-Content-Type-Options' => 'nosniff',
 			)
 		);
 	}
@@ -532,8 +554,10 @@ function vibe_check_og_image_handler( WP_REST_Request $request ) {
 		$jpeg,
 		200,
 		array(
-			'Content-Type'  => 'image/jpeg',
-			'Cache-Control' => 'public, max-age=31536000',
+			'Content-Type'           => 'image/jpeg',
+			'Cache-Control'          => 'public, max-age=31536000',
+			'Content-Length'         => (string) strlen( $jpeg ),
+			'X-Content-Type-Options' => 'nosniff',
 		)
 	);
 }
@@ -562,6 +586,7 @@ function vibe_check_rest_pre_serve_og_image( $served, $result, $request, $server
 	header( 'Cache-Control: public, max-age=31536000' );
 	if ( ! headers_sent() ) {
 		header( 'X-Content-Type-Options: nosniff' );
+		header( 'Content-Length: ' . strlen( $data ) );
 	}
 	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- binary JPEG.
 	echo $data;
