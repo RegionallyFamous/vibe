@@ -1,7 +1,7 @@
 {
-	"name": "regionallyfamous/wp-github-release-updater",
+	"name": "regionallyfamous/updater-mcupdateface",
 	"version": "1.0.0",
-	"description": "WordPress plugin updates from public GitHub Releases (semver tags + .zip asset or zipball)",
+	"description": "Updater McUpdateface — WordPress plugin updates from public GitHub Releases (semver tags + .zip asset or zipball)",
 	"type": "library",
 	"license": "GPL-2.0-or-later",
 	"keywords": [
@@ -21,7 +21,7 @@
 	},
 	"autoload": {
 		"psr-4": {
-			"RegionallyFamous\\WpGithubReleaseUpdater\\": "src/"
+			"RegionallyFamous\\UpdaterMcUpdateface\\": "src/"
 		}
 	}
 }

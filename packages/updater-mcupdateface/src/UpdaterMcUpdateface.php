@@ -2,18 +2,18 @@
 /**
  * GitHub Releases plugin updates (public repo; optional PAT via GITHUB_UPDATER_TOKEN).
  *
- * @package RegionallyFamous\WpGithubReleaseUpdater
+ * @package RegionallyFamous\UpdaterMcUpdateface
  */
 
-namespace RegionallyFamous\WpGithubReleaseUpdater;
+namespace RegionallyFamous\UpdaterMcUpdateface;
 
 /**
- * GitHub Releases Plugin Updater
+ * Updater McUpdateface — GitHub Releases plugin updates.
  *
  * WordPress loads updates from GitHub releases when a newer semver tag exists
  * and a .zip is attached (or falls back to GitHub’s source zipball).
  */
-class GitHub_Plugin_Updater {
+class UpdaterMcUpdateface {
 
 	/**
 	 * Same-request memo for inject_update + plugins_api (avoids duplicate HTTP).
@@ -90,7 +90,7 @@ class GitHub_Plugin_Updater {
 		$this->token       = strlen( $tok ) > 512 ? substr( $tok, 0, 512 ) : $tok;
 
 		if ( '' === $this->owner || '' === $this->repo ) {
-			_doing_it_wrong( __CLASS__, 'GitHub_Plugin_Updater requires owner and repo.', '1.0.0' );
+			_doing_it_wrong( __CLASS__, 'UpdaterMcUpdateface requires owner and repo.', '1.0.0' );
 			return;
 		}
 

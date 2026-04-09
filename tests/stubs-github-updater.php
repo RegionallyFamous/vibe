@@ -253,10 +253,10 @@ if ( ! function_exists( 'get_bloginfo' ) ) {
  * @return void
  */
 function vibe_test_github_updater_reset_static_memo() {
-	if ( ! class_exists( 'GitHub_Plugin_Updater', false ) ) {
+	if ( ! class_exists( \RegionallyFamous\UpdaterMcUpdateface\UpdaterMcUpdateface::class, false ) ) {
 		return;
 	}
-	$ref = new ReflectionClass( 'GitHub_Plugin_Updater' );
+	$ref = new ReflectionClass( \RegionallyFamous\UpdaterMcUpdateface\UpdaterMcUpdateface::class );
 	foreach ( array( 'memo_set', 'memo_sig', 'memo_release' ) as $name ) {
 		$p = $ref->getProperty( $name );
 		if ( 'memo_set' === $name ) {

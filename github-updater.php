@@ -1,9 +1,9 @@
 <?php
 /**
- * Loads {@see \RegionallyFamous\WpGithubReleaseUpdater\GitHub_Plugin_Updater} for Vibe Check.
+ * Loads {@see \RegionallyFamous\UpdaterMcUpdateface\UpdaterMcUpdateface} for Vibe Check.
  *
- * The implementation lives in packages/wp-github-release-updater (Composer package). The release
- * zip includes that path so installs work without running Composer.
+ * The implementation lives in packages/updater-mcupdateface (Composer package: updater-mcupdateface).
+ * The release zip includes that path so installs work without running Composer.
  *
  * @package VibeCheck
  */
@@ -13,8 +13,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $rf_ghu_paths = array(
-	__DIR__ . '/vendor/regionallyfamous/wp-github-release-updater/src/GitHub_Plugin_Updater.php',
-	__DIR__ . '/packages/wp-github-release-updater/src/GitHub_Plugin_Updater.php',
+	__DIR__ . '/vendor/regionallyfamous/updater-mcupdateface/src/UpdaterMcUpdateface.php',
+	__DIR__ . '/packages/updater-mcupdateface/src/UpdaterMcUpdateface.php',
 );
 
 foreach ( $rf_ghu_paths as $rf_ghu_file ) {
@@ -24,10 +24,10 @@ foreach ( $rf_ghu_paths as $rf_ghu_file ) {
 	}
 }
 
-if ( ! class_exists( \RegionallyFamous\WpGithubReleaseUpdater\GitHub_Plugin_Updater::class, false ) ) {
+if ( ! class_exists( \RegionallyFamous\UpdaterMcUpdateface\UpdaterMcUpdateface::class, false ) ) {
 	return;
 }
 
 if ( ! class_exists( 'GitHub_Plugin_Updater', false ) ) {
-	class_alias( \RegionallyFamous\WpGithubReleaseUpdater\GitHub_Plugin_Updater::class, 'GitHub_Plugin_Updater' );
+	class_alias( \RegionallyFamous\UpdaterMcUpdateface\UpdaterMcUpdateface::class, 'GitHub_Plugin_Updater' );
 }

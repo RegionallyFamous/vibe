@@ -8,7 +8,7 @@
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers GitHub_Plugin_Updater
+ * @covers \RegionallyFamous\UpdaterMcUpdateface\UpdaterMcUpdateface
  */
 class GitHubUpdaterTest extends TestCase {
 
@@ -31,7 +31,7 @@ class GitHubUpdaterTest extends TestCase {
 	 * @return GitHub_Plugin_Updater
 	 */
 	private function make_updater( $owner = 'RegionallyFamous', $repo = 'vibe' ) {
-		return new GitHub_Plugin_Updater(
+		return new \RegionallyFamous\UpdaterMcUpdateface\UpdaterMcUpdateface(
 			self::FAKE_PLUGIN_FILE,
 			array(
 				'owner' => $owner,
@@ -45,7 +45,7 @@ class GitHubUpdaterTest extends TestCase {
 	 * @return ReflectionClass
 	 */
 	private function updater_class() {
-		return new ReflectionClass( 'GitHub_Plugin_Updater' );
+		return new ReflectionClass( \RegionallyFamous\UpdaterMcUpdateface\UpdaterMcUpdateface::class );
 	}
 
 	/**
@@ -174,7 +174,7 @@ class GitHubUpdaterTest extends TestCase {
 		$out = $updater->inject_update( $t );
 		$this->assertSame( array(), $out->response );
 
-		$t->checked = array( 'vibe-check/vibe-check.php' => '1.0.10' );
+		$t->checked = array( 'vibe-check/vibe-check.php' => '1.0.11' );
 		$t->response = array();
 		$out2        = $updater->inject_update( $t );
 		$this->assertSame( array(), $out2->response );
@@ -214,7 +214,7 @@ class GitHubUpdaterTest extends TestCase {
 	 * @return void
 	 */
 	public function test_release_transient_key_matches_sanitized_owner_repo() {
-		$key = GitHub_Plugin_Updater::release_transient_key( 'RegionallyFamous', 'vibe' );
+		$key = \RegionallyFamous\UpdaterMcUpdateface\UpdaterMcUpdateface::release_transient_key( 'RegionallyFamous', 'vibe' );
 		$this->assertSame( 'ghu_' . md5( 'regionallyfamous|vibe' ), $key );
 	}
 
@@ -226,7 +226,7 @@ class GitHubUpdaterTest extends TestCase {
 	public function test_negative_release_transient_skips_http() {
 		$updater = $this->make_updater();
 		$key     = GitHub_Plugin_Updater::release_transient_key( 'RegionallyFamous', 'vibe' );
-		$miss    = ( new ReflectionClass( 'GitHub_Plugin_Updater' ) )->getConstant( 'RELEASE_FETCH_MISS' );
+		$miss    = ( new ReflectionClass( \RegionallyFamous\UpdaterMcUpdateface\UpdaterMcUpdateface::class ) )->getConstant( 'RELEASE_FETCH_MISS' );
 		$this->assertIsString( $miss );
 		$GLOBALS['vibe_test_transients'][ $key ] = $miss;
 
