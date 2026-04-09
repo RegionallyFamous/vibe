@@ -12,15 +12,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$rf_ghu_paths = array(
-	__DIR__ . '/vendor/regionallyfamous/updater-mcupdateface/src/UpdaterMcUpdateface.php',
-	__DIR__ . '/packages/updater-mcupdateface/src/UpdaterMcUpdateface.php',
-);
+// Avoid "Cannot declare class … already in use" when Composer (or another plugin) autoloaded
+// this same class from vendor while a second copy exists under packages/ (different realpath).
+if ( ! class_exists( \RegionallyFamous\UpdaterMcUpdateface\UpdaterMcUpdateface::class, false ) ) {
+	$rf_ghu_paths = array(
+		__DIR__ . '/vendor/regionallyfamous/updater-mcupdateface/src/UpdaterMcUpdateface.php',
+		__DIR__ . '/packages/updater-mcupdateface/src/UpdaterMcUpdateface.php',
+	);
 
-foreach ( $rf_ghu_paths as $rf_ghu_file ) {
-	if ( is_readable( $rf_ghu_file ) ) {
-		require_once $rf_ghu_file;
-		break;
+	foreach ( $rf_ghu_paths as $rf_ghu_file ) {
+		if ( is_readable( $rf_ghu_file ) ) {
+			require_once $rf_ghu_file;
+			break;
+		}
 	}
 }
 

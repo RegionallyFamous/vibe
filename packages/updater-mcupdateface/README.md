@@ -45,10 +45,12 @@ new UpdaterMcUpdateface(
   array(
     'owner' => 'YourOrg',
     'repo'  => 'your-repo',
-    'token' => defined( 'GITHUB_UPDATER_TOKEN' ) ? GITHUB_UPDATER_TOKEN : '',
+    'token' => defined( 'GITHUB_UPDATER_TOKEN' ) ? GITHUB_UPDATER_TOKEN : (string) get_option( 'my_plugin_github_pat', '' ),
   )
 );
 ```
+
+The `token` value can come from anywhere (constant, `get_option`, env) — whatever your plugin uses for an admin “GitHub token” field.
 
 ## Without Composer
 
@@ -58,7 +60,7 @@ Copy `src/UpdaterMcUpdateface.php` into your plugin and `require_once` it, then 
 
 1. **Published Release** (not tag-only) with semver **`v1.2.3`**.
 2. Attach a **`.zip`** whose root is **`your-plugin-slug/your-main.php`**.
-3. Optional: **`GITHUB_UPDATER_TOKEN`** in `wp-config.php` if you hit GitHub **rate limits** (HTTP 403).
+3. Optional **PAT** as `token` for **private** repos or **rate limits** (HTTP 403): e.g. `GITHUB_UPDATER_TOKEN` in `wp-config.php`, or a value from `get_option` / your settings UI.
 
 ## Filters / debug
 

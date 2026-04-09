@@ -9,6 +9,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/vibe-check-github-updater-token.php';
+
 /**
  * Option name for stored API key (encrypted at rest only if you add that layer; stored as saved option).
  */
@@ -1397,6 +1399,30 @@ function vibe_check_register_claude_settings() {
 			'default'           => 0,
 		)
 	);
+	register_setting(
+		'vibe_check_settings',
+		VIBE_CHECK_OPTION_GITHUB_UPDATER_TOKEN,
+		array(
+			'type'              => 'string',
+			'sanitize_callback' => static function ( $value ) {
+				if ( isset( $_POST['vibe_check_clear_github_token'] ) && '1' === (string) wp_unslash( $_POST['vibe_check_clear_github_token'] ) ) {
+					return '';
+				}
+				if ( ! is_string( $value ) ) {
+					$value = '';
+				}
+				$value = trim( sanitize_text_field( $value ) );
+				if ( strlen( $value ) > 512 ) {
+					$value = substr( $value, 0, 512 );
+				}
+				if ( '' === $value ) {
+					return (string) get_option( VIBE_CHECK_OPTION_GITHUB_UPDATER_TOKEN, '' );
+				}
+				return $value;
+			},
+			'default'           => '',
+		)
+	);
 }
 add_action( 'admin_init', 'vibe_check_register_claude_settings' );
 
@@ -1407,9 +1433,13 @@ function vibe_check_render_settings_page() {
 	if ( ! current_user_can( 'manage_options' ) ) {
 		return;
 	}
-	$has_constant = defined( 'VIBE_CHECK_CLAUDE_API_KEY' ) && VIBE_CHECK_CLAUDE_API_KEY;
-	$stored       = get_option( VIBE_CHECK_OPTION_CLAUDE_KEY, '' );
-	$masked       = $stored ? true : false;
+	$has_constant    = defined( 'VIBE_CHECK_CLAUDE_API_KEY' ) && VIBE_CHECK_CLAUDE_API_KEY;
+	$stored          = get_option( VIBE_CHECK_OPTION_CLAUDE_KEY, '' );
+	$masked          = $stored ? true : false;
+	$has_gh_constant = defined( 'GITHUB_UPDATER_TOKEN' ) && (string) GITHUB_UPDATER_TOKEN !== '';
+	$stored_gh       = get_option( VIBE_CHECK_OPTION_GITHUB_UPDATER_TOKEN, '' );
+	$stored_gh       = is_string( $stored_gh ) ? $stored_gh : '';
+	$masked_gh       = '' !== $stored_gh;
 	?>
 	<div class="wrap">
 		<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
@@ -1524,6 +1554,52 @@ function vibe_check_render_settings_page() {
 							esc_html_e( 'Used as og:image when someone shares the quiz page URL before taking the quiz (no ?quiz_result= in the link). Result links still use the generated result card image.', 'vibe-check' );
 							?>
 						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row">
+						<label for="vibe_check_github_updater_token"><?php esc_html_e( 'GitHub token (updates)', 'vibe-check' ); ?></label>
+					</th>
+					<td>
+						<?php if ( $has_gh_constant ) : ?>
+							<div class="notice notice-info inline" style="margin:0 0 8px;padding:8px 12px;">
+								<p style="margin:0;">
+									<?php
+									esc_html_e( 'GITHUB_UPDATER_TOKEN is set in wp-config.php — the field below is ignored.', 'vibe-check' );
+									?>
+								</p>
+							</div>
+						<?php endif; ?>
+						<input
+							name="<?php echo esc_attr( VIBE_CHECK_OPTION_GITHUB_UPDATER_TOKEN ); ?>"
+							id="vibe_check_github_updater_token"
+							type="password"
+							class="regular-text code"
+							value=""
+							autocomplete="off"
+							placeholder="<?php echo $masked_gh ? esc_attr( '•••••••••••••••' ) : ''; ?>"
+							<?php disabled( $has_gh_constant ); ?>
+						/>
+						<p class="description">
+							<?php
+							echo wp_kses_post(
+								sprintf(
+									/* translators: 1: GitHub PAT docs URL, 2: fine-grained PAT docs URL */
+									__( 'Optional <strong>personal access token</strong> for the GitHub Releases API — use a <a href="%1$s" target="_blank" rel="noopener noreferrer">classic PAT</a> or <a href="%2$s" target="_blank" rel="noopener noreferrer">fine-grained token</a> with read access to your private fork’s code and metadata. Lets WordPress download update zips and avoids shared-host rate limits. Stored as plain text in the database; for production you can still define <code>GITHUB_UPDATER_TOKEN</code> in <code>wp-config.php</code> instead.', 'vibe-check' ),
+									'https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens',
+									'https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token'
+								)
+							);
+							?>
+						</p>
+						<?php if ( ! $has_gh_constant && $masked_gh ) : ?>
+							<p>
+								<label>
+									<input name="vibe_check_clear_github_token" type="checkbox" value="1" />
+									<?php esc_html_e( 'Remove saved GitHub token', 'vibe-check' ); ?>
+								</label>
+							</p>
+						<?php endif; ?>
 					</td>
 				</tr>
 			</table>

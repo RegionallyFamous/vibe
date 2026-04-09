@@ -3,7 +3,7 @@ Contributors: regionallyfamous
 Tags: block, quiz, personality, gutenberg, share, claude, ai
 Requires at least: 6.5
 Tested up to: 6.8
-Stable tag: 1.0.11
+Stable tag: 1.0.13
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -44,9 +44,9 @@ You need the compiled assets in `build/` (from `npm run build`). Ship a release 
 
 = How do updates from GitHub work? =
 
-The plugin checks the [RegionallyFamous/vibe](https://github.com/RegionallyFamous/vibe) **Releases** API (no token needed for this public repo). When a newer semver tag exists and the release includes a **.zip** asset (e.g. `vibe-check.zip`), **Dashboard → Updates** can install it. For a **private** fork or mirror, define a GitHub personal access token in `wp-config.php` as `GITHUB_UPDATER_TOKEN` before the plugin loads.
+The plugin checks the [RegionallyFamous/vibe](https://github.com/RegionallyFamous/vibe) **Releases** API (no token needed for this public repo). When a newer semver tag exists and the release includes a **.zip** asset (e.g. `vibe-check.zip`), **Dashboard → Updates** can install it. For a **private** fork or mirror, paste a GitHub **personal access token** under **Settings → Vibe Check → GitHub token (updates)** (classic or fine-grained, read access to code and metadata), or define `GITHUB_UPDATER_TOKEN` in `wp-config.php` before the plugin loads (recommended for production).
 
-**If you don’t see an update:** WordPress only offers an update when the **release tag version is greater** than the **Version** header in your installed copy (e.g. both are `1.0.11` → correctly shows nothing). Use **Dashboard → Updates → Check again** (WordPress caches update checks for several hours). The GitHub object must be a **published Release** (not only a lightweight tag, and not draft-only). The plugin folder should be `wp-content/plugins/vibe-check/` with main file `vibe-check.php` so WordPress matches the update to the right plugin (other folder names still work if that file is the one WordPress loads). **Settings → Vibe Check → Clear update caches** (if you can update plugins) wipes WordPress’s plugin update transient and the GitHub release cache, then use **Check again** on Updates. The settings screen also shows your **installed plugin basename** (e.g. `vibe-check/vibe-check.php`) so you can confirm it matches a normal install. Many shared hosts share one IP across sites: unauthenticated GitHub API calls can hit **rate limits** (HTTP 403); define `GITHUB_UPDATER_TOKEN` in `wp-config.php` if previews stall. **`DISALLOW_FILE_MODS`** (or similar) in `wp-config.php` can hide plugin update actions—updates may still be detected but not installable from the dashboard. If GitHub has a newer zip but your site never shows it, set **`VIBE_CHECK_UPDATER_DEBUG`** to `true` with **`WP_DEBUG_LOG`** in `wp-config.php`: the log can report API failures or **“no matching basename in update_plugins->checked”** (unusual paths/symlinks). The filter **`vibe_check_github_updater_collect_slugs`** can force the correct basename. CLI: `php scripts/verify-github-release.php RegionallyFamous vibe` checks the same API the plugin uses. **`php scripts/simulate-github-updater.php`** (or `npm run simulate:github-updater`) walks the full updater decision path: sanitized URL, rate-limit headers (`--headers`), `version_compare` against an installed version (defaults to `Version` in `vibe-check.php`), and whether WordPress would put the plugin in `response` or skip. Use **`GITHUB_TOKEN=…`** if you hit HTTP 403 from the API.
+**If you don’t see an update:** WordPress only offers an update when the **release tag version is greater** than the **Version** header in your installed copy (e.g. both are `1.0.13` → correctly shows nothing). Use **Dashboard → Updates → Check again** (WordPress caches update checks for several hours). The GitHub object must be a **published Release** (not only a lightweight tag, and not draft-only). The plugin folder should be `wp-content/plugins/vibe-check/` with main file `vibe-check.php` so WordPress matches the update to the right plugin (other folder names still work if that file is the one WordPress loads). **Settings → Vibe Check → Clear update caches** (if you can update plugins) wipes WordPress’s plugin update transient and the GitHub release cache, then use **Check again** on Updates. The settings screen also shows your **installed plugin basename** (e.g. `vibe-check/vibe-check.php`) so you can confirm it matches a normal install. Many shared hosts share one IP across sites: unauthenticated GitHub API calls can hit **rate limits** (HTTP 403); define `GITHUB_UPDATER_TOKEN` in `wp-config.php` if previews stall. **`DISALLOW_FILE_MODS`** (or similar) in `wp-config.php` can hide plugin update actions—updates may still be detected but not installable from the dashboard. If GitHub has a newer zip but your site never shows it, set **`VIBE_CHECK_UPDATER_DEBUG`** to `true` with **`WP_DEBUG_LOG`** in `wp-config.php`: the log can report API failures or **“no matching basename in update_plugins->checked”** (unusual paths/symlinks). The filter **`vibe_check_github_updater_collect_slugs`** can force the correct basename. CLI: `php scripts/verify-github-release.php RegionallyFamous vibe` checks the same API the plugin uses. **`php scripts/simulate-github-updater.php`** (or `npm run simulate:github-updater`) walks the full updater decision path: sanitized URL, rate-limit headers (`--headers`), `version_compare` against an installed version (defaults to `Version` in `vibe-check.php`), and whether WordPress would put the plugin in `response` or skip. Use **`GITHUB_TOKEN=…`** if you hit HTTP 403 from the API.
 
 = Where are Open Graph images served? =
 
@@ -102,6 +102,12 @@ Keys saved under **Settings → Vibe Check** are stored as a normal WordPress op
 
 == Changelog ==
 
+= 1.0.13 =
+* **GitHub updates** — **Settings → Vibe Check** includes **GitHub token (updates)** for private forks and rate limits (classic or fine-grained PAT). `GITHUB_UPDATER_TOKEN` in `wp-config.php` still overrides the saved value. Saving or clearing the token flushes the release JSON cache.
+
+= 1.0.12 =
+* **Updater** — Avoid fatal **“Cannot declare class … already in use”** when the updater class was already autoloaded (e.g. `vendor/` + bundled `packages/` copy); `github-updater.php` only loads the file if the class is not yet defined.
+
 = 1.0.11 =
 * **Updater McUpdateface** — Composer package renamed to **`regionallyfamous/updater-mcupdateface`**; folder **`packages/updater-mcupdateface/`**; class **`RegionallyFamous\UpdaterMcUpdateface\UpdaterMcUpdateface`**. Global name **`GitHub_Plugin_Updater`** remains a `class_alias` for existing code and docs.
 
@@ -156,6 +162,12 @@ Keys saved under **Settings → Vibe Check** are stored as a normal WordPress op
 * **Safety & limits** — Sanitized quiz payload, size limits on REST and `data-quiz`, generation and OG JPEG rate limiting, uninstall option cleanup.
 
 == Upgrade Notice ==
+
+= 1.0.13 =
+Optional GitHub PAT can be saved in **Settings → Vibe Check** for private repos; `GITHUB_UPDATER_TOKEN` in wp-config still wins.
+
+= 1.0.12 =
+Fixes a PHP fatal when the updater class loaded twice (Composer + bundled path). Recommended for all sites on 1.0.11.
 
 = 1.0.11 =
 Same updater behavior; package folder is now `packages/updater-mcupdateface/`. Clear update caches under Settings → Vibe Check if needed.

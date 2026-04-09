@@ -19,3 +19,4 @@ $wpdb->query(
 delete_option( 'vibe_check_claude_api_key' );
 delete_option( 'vibe_check_claude_system_addendum' );
 delete_option( 'vibe_check_default_share_image_id' );
+delete_option( 'vibe_check_github_updater_token' );

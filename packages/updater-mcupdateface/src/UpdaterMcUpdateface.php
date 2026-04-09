@@ -1,6 +1,6 @@
 <?php
 /**
- * GitHub Releases plugin updates (public repo; optional PAT via GITHUB_UPDATER_TOKEN).
+ * GitHub Releases plugin updates (public repo; optional PAT via config `token`, e.g. wp-config or a settings UI).
  *
  * @package RegionallyFamous\UpdaterMcUpdateface
  */
@@ -465,7 +465,7 @@ class UpdaterMcUpdateface {
 					error_log( 'RF GitHub release updater: HTTP ' . $code . ' ' . $url );
 					if ( 403 === $code ) {
 						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- opt-in debug.
-						error_log( 'RF GitHub release updater: HTTP 403 is often GitHub API rate limit for unauthenticated requests; define GITHUB_UPDATER_TOKEN in wp-config.php or wait ~1 hour.' );
+						error_log( 'RF GitHub release updater: HTTP 403 is often GitHub API rate limit for unauthenticated requests; add a token (Settings → Vibe Check → GitHub token, or GITHUB_UPDATER_TOKEN in wp-config.php) or wait ~1 hour.' );
 					}
 					if ( 404 === $code ) {
 						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- opt-in debug.
