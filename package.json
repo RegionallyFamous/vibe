@@ -18,7 +18,8 @@
     "build": "wp-scripts build --webpack-copy-php",
     "start": "wp-scripts start --webpack-copy-php",
     "release": "npm run build && wp-scripts plugin-zip",
-    "verify:github-release": "php scripts/verify-github-release.php RegionallyFamous vibe"
+    "verify:github-release": "php scripts/verify-github-release.php RegionallyFamous vibe",
+    "simulate:github-updater": "php scripts/simulate-github-updater.php"
   },
   "dependencies": {},
   "devDependencies": {
