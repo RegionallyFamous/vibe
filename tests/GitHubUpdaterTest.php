@@ -174,7 +174,7 @@ class GitHubUpdaterTest extends TestCase {
 		$out = $updater->inject_update( $t );
 		$this->assertSame( array(), $out->response );
 
-		$t->checked = array( 'vibe-check/vibe-check.php' => '1.0.7' );
+		$t->checked = array( 'vibe-check/vibe-check.php' => '1.0.8' );
 		$t->response = array();
 		$out2        = $updater->inject_update( $t );
 		$this->assertSame( array(), $out2->response );
@@ -216,6 +216,35 @@ class GitHubUpdaterTest extends TestCase {
 	public function test_release_transient_key_matches_sanitized_owner_repo() {
 		$key = GitHub_Plugin_Updater::release_transient_key( 'RegionallyFamous', 'vibe' );
 		$this->assertSame( 'ghu_' . md5( 'regionallyfamous|vibe' ), $key );
+	}
+
+	/**
+	 * Failed API responses cache a sentinel; reading it must not hit the network again until expiry.
+	 *
+	 * @return void
+	 */
+	public function test_negative_release_transient_skips_http() {
+		$updater = $this->make_updater();
+		$key     = GitHub_Plugin_Updater::release_transient_key( 'RegionallyFamous', 'vibe' );
+		$miss    = ( new ReflectionClass( 'GitHub_Plugin_Updater' ) )->getConstant( 'RELEASE_FETCH_MISS' );
+		$this->assertIsString( $miss );
+		$GLOBALS['vibe_test_transients'][ $key ] = $miss;
+
+		$called = 0;
+		$GLOBALS['vibe_test_wp_remote_get_handler'] = static function () use ( &$called ) {
+			++$called;
+			return array(
+				'response' => array( 'code' => 500 ),
+				'body'     => '',
+			);
+		};
+
+		$t = new stdClass();
+		$t->checked  = array( 'vibe-check/vibe-check.php' => '1.0.0' );
+		$t->response = array();
+
+		$updater->inject_update( $t );
+		$this->assertSame( 0, $called );
 	}
 
 	/**

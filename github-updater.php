@@ -70,6 +70,16 @@ class GitHub_Plugin_Updater {
 	private $cache_ttl = 12 * HOUR_IN_SECONDS;
 
 	/**
+	 * Cached value when the GitHub request failed or JSON was invalid.
+	 *
+	 * Do not use an empty array(): in PHP it is truthy, so callers testing `if ( ! $release )`
+	 * would mis-handle it. A short string keeps failed fetches distinct from a real release payload.
+	 *
+	 * @var string
+	 */
+	private const RELEASE_FETCH_MISS = '_vibe_check_ghu_fetch_miss_';
+
+	/**
 	 * @param string $plugin_file Main plugin file path.
 	 * @param array  $config      Keys: owner, repo, token (optional).
 	 */
@@ -82,7 +92,7 @@ class GitHub_Plugin_Updater {
 		$this->token       = strlen( $tok ) > 512 ? substr( $tok, 0, 512 ) : $tok;
 
 		if ( '' === $this->owner || '' === $this->repo ) {
-			_doing_it_wrong( __CLASS__, 'GitHub_Plugin_Updater requires owner and repo.', '1.0.7' );
+			_doing_it_wrong( __CLASS__, 'GitHub_Plugin_Updater requires owner and repo.', '1.0.8' );
 			return;
 		}
 
@@ -214,9 +224,11 @@ class GitHub_Plugin_Updater {
 			return isset( $checked[ $this->plugin_slug ] ) ? array( $this->plugin_slug ) : array();
 		}
 
-		$out = array();
+		$main    = basename( $this->plugin_file );
+		$pattern = '#/' . preg_quote( $main, '#' ) . '$#';
+		$out     = array();
 		foreach ( array_keys( $checked ) as $slug ) {
-			if ( ! is_string( $slug ) || ! preg_match( '#/vibe-check\.php$#', $slug ) ) {
+			if ( ! is_string( $slug ) || ! preg_match( $pattern, $slug ) ) {
 				continue;
 			}
 			$path = $root . '/' . str_replace( '\\', '/', $slug );
@@ -365,11 +377,20 @@ class GitHub_Plugin_Updater {
 
 		$cached = get_transient( $this->cache_key );
 		if ( false !== $cached ) {
-			$out = $cached ? $cached : null;
-			self::$memo_set     = true;
-			self::$memo_sig     = $sig;
-			self::$memo_release = $out;
-			return $out;
+			if ( self::RELEASE_FETCH_MISS === $cached ) {
+				self::$memo_set     = true;
+				self::$memo_sig     = $sig;
+				self::$memo_release = null;
+				return null;
+			}
+			if ( is_array( $cached ) && ! empty( $cached['tag_name'] ) ) {
+				self::$memo_set     = true;
+				self::$memo_sig     = $sig;
+				self::$memo_release = $cached;
+				return $cached;
+			}
+			// Legacy failure cache used `array()` (truthy in PHP) or corrupt payload — drop and refetch.
+			delete_transient( $this->cache_key );
 		}
 
 		$url      = 'https://api.github.com/repos/' . rawurlencode( $this->owner ) . '/' . rawurlencode( $this->repo ) . '/releases/latest';
@@ -388,11 +409,20 @@ class GitHub_Plugin_Updater {
 					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- opt-in debug.
 					error_log( 'Vibe Check GitHub updater: ' . $response->get_error_message() );
 				} else {
+					$code = (int) wp_remote_retrieve_response_code( $response );
 					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- opt-in debug.
-					error_log( 'Vibe Check GitHub updater: HTTP ' . (int) wp_remote_retrieve_response_code( $response ) . ' ' . $url );
+					error_log( 'Vibe Check GitHub updater: HTTP ' . $code . ' ' . $url );
+					if ( 403 === $code ) {
+						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- opt-in debug.
+						error_log( 'Vibe Check GitHub updater: HTTP 403 is often GitHub API rate limit for unauthenticated requests; define GITHUB_UPDATER_TOKEN in wp-config.php or wait ~1 hour.' );
+					}
+					if ( 404 === $code ) {
+						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- opt-in debug.
+						error_log( 'Vibe Check GitHub updater: HTTP 404 means no published “latest” release (draft/prerelease-only/tags are not enough).' );
+					}
 				}
 			}
-			set_transient( $this->cache_key, array(), 5 * MINUTE_IN_SECONDS );
+			set_transient( $this->cache_key, self::RELEASE_FETCH_MISS, 5 * MINUTE_IN_SECONDS );
 			self::$memo_set     = true;
 			self::$memo_sig     = $sig;
 			self::$memo_release = null;
@@ -401,7 +431,7 @@ class GitHub_Plugin_Updater {
 
 		$body = wp_remote_retrieve_body( $response );
 		if ( strlen( $body ) > 2097152 ) {
-			set_transient( $this->cache_key, array(), 5 * MINUTE_IN_SECONDS );
+			set_transient( $this->cache_key, self::RELEASE_FETCH_MISS, 5 * MINUTE_IN_SECONDS );
 			self::$memo_set     = true;
 			self::$memo_sig     = $sig;
 			self::$memo_release = null;
@@ -411,7 +441,7 @@ class GitHub_Plugin_Updater {
 		$release = json_decode( $body, true, 32 );
 
 		if ( JSON_ERROR_NONE !== json_last_error() || empty( $release['tag_name'] ) || ! is_array( $release ) ) {
-			set_transient( $this->cache_key, array(), 5 * MINUTE_IN_SECONDS );
+			set_transient( $this->cache_key, self::RELEASE_FETCH_MISS, 5 * MINUTE_IN_SECONDS );
 			self::$memo_set     = true;
 			self::$memo_sig     = $sig;
 			self::$memo_release = null;
