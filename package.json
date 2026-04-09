@@ -1,12 +1,15 @@
 {
   "name": "vibe-check",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "Vibe Check quiz block for WordPress",
   "author": "Regionally Famous (https://github.com/RegionallyFamous/vibe)",
   "license": "GPL-2.0-or-later",
   "files": [
     "vibe-check.php",
     "github-updater.php",
+    "packages/wp-github-release-updater/composer.json",
+    "packages/wp-github-release-updater/README.md",
+    "packages/wp-github-release-updater/src/GitHub_Plugin_Updater.php",
     "readme.txt",
     "uninstall.php",
     "includes",

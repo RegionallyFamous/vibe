@@ -3,7 +3,7 @@
  * Plugin Name:       Vibe Check
  * Plugin URI:        https://github.com/RegionallyFamous/vibe
  * Description:       Personality-style quiz block with shareable result cards and optional OG images.
- * Version:           1.0.9
+ * Version:           1.0.10
  * Requires at least: 6.5
  * Requires PHP:      7.4
  * Author:            Regionally Famous
@@ -22,6 +22,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once __DIR__ . '/github-updater.php';
 
+/**
+ * Back-compat: {@see 'vibe_check_github_updater_collect_slugs'} delegates from the shared library filter.
+ */
+add_filter(
+	'rf_wp_github_release_updater_collect_slugs',
+	static function ( $slugs, $checked, $plugin_file ) {
+		return apply_filters( 'vibe_check_github_updater_collect_slugs', $slugs, $checked, $plugin_file );
+	},
+	10,
+	3
+);
+
 /** GitHub repo for in-plugin updates (also used to clear updater transients). */
 define( 'VIBE_CHECK_GITHUB_OWNER', 'RegionallyFamous' );
 define( 'VIBE_CHECK_GITHUB_REPO', 'vibe' );
@@ -35,7 +47,7 @@ new GitHub_Plugin_Updater(
 	)
 );
 
-define( 'VIBE_CHECK_VERSION', '1.0.9' );
+define( 'VIBE_CHECK_VERSION', '1.0.10' );
 define( 'VIBE_CHECK_PLUGIN_FILE', __FILE__ );
 define( 'VIBE_CHECK_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'VIBE_CHECK_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

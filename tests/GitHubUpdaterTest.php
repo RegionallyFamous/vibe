@@ -174,7 +174,7 @@ class GitHubUpdaterTest extends TestCase {
 		$out = $updater->inject_update( $t );
 		$this->assertSame( array(), $out->response );
 
-		$t->checked = array( 'vibe-check/vibe-check.php' => '1.0.9' );
+		$t->checked = array( 'vibe-check/vibe-check.php' => '1.0.10' );
 		$t->response = array();
 		$out2        = $updater->inject_update( $t );
 		$this->assertSame( array(), $out2->response );

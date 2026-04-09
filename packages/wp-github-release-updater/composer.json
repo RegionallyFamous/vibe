@@ -1,0 +1,27 @@
+{
+	"name": "regionallyfamous/wp-github-release-updater",
+	"version": "1.0.0",
+	"description": "WordPress plugin updates from public GitHub Releases (semver tags + .zip asset or zipball)",
+	"type": "library",
+	"license": "GPL-2.0-or-later",
+	"keywords": [
+		"wordpress",
+		"github",
+		"updates",
+		"plugin"
+	],
+	"authors": [
+		{
+			"name": "Regionally Famous",
+			"homepage": "https://github.com/RegionallyFamous"
+		}
+	],
+	"require": {
+		"php": ">=7.4"
+	},
+	"autoload": {
+		"psr-4": {
+			"RegionallyFamous\\WpGithubReleaseUpdater\\": "src/"
+		}
+	}
+}
