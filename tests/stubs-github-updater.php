@@ -16,6 +16,21 @@ if ( ! isset( $GLOBALS['vibe_test_transients'] ) || ! is_array( $GLOBALS['vibe_t
 	$GLOBALS['vibe_test_transients'] = array();
 }
 
+if ( ! defined( 'WP_PLUGIN_DIR' ) ) {
+	define( 'WP_PLUGIN_DIR', '/var/www/wp-content/plugins/' );
+}
+
+if ( ! function_exists( 'wp_normalize_path' ) ) {
+	/**
+	 * @param string $path Path.
+	 * @return string
+	 */
+	function wp_normalize_path( $path ) {
+		$path = str_replace( '\\', '/', (string) $path );
+		return preg_replace( '#/{2,}#', '/', $path );
+	}
+}
+
 if ( ! class_exists( 'WP_Error', false ) ) {
 	/**
 	 * Minimal WP_Error for stubs.
@@ -108,6 +123,38 @@ if ( ! function_exists( 'delete_transient' ) ) {
 	function delete_transient( $key ) {
 		unset( $GLOBALS['vibe_test_transients'][ $key ] );
 		return true;
+	}
+}
+
+if ( ! function_exists( 'get_site_transient' ) ) {
+	/**
+	 * @param string $key Key.
+	 * @return mixed
+	 */
+	function get_site_transient( $key ) {
+		return get_transient( $key );
+	}
+}
+
+if ( ! function_exists( 'set_site_transient' ) ) {
+	/**
+	 * @param string $key   Key.
+	 * @param mixed  $value Value.
+	 * @param int    $ttl   TTL.
+	 * @return bool
+	 */
+	function set_site_transient( $key, $value, $ttl = 0 ) {
+		return set_transient( $key, $value, $ttl );
+	}
+}
+
+if ( ! function_exists( 'delete_site_transient' ) ) {
+	/**
+	 * @param string $key Key.
+	 * @return bool
+	 */
+	function delete_site_transient( $key ) {
+		return delete_transient( $key );
 	}
 }
 

@@ -92,7 +92,7 @@ class GitHub_Plugin_Updater {
 		$this->token       = strlen( $tok ) > 512 ? substr( $tok, 0, 512 ) : $tok;
 
 		if ( '' === $this->owner || '' === $this->repo ) {
-			_doing_it_wrong( __CLASS__, 'GitHub_Plugin_Updater requires owner and repo.', '1.0.8' );
+			_doing_it_wrong( __CLASS__, 'GitHub_Plugin_Updater requires owner and repo.', '1.0.9' );
 			return;
 		}
 
@@ -100,7 +100,8 @@ class GitHub_Plugin_Updater {
 
 		add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'inject_update' ) );
 		// Some hosts never re-fire pre_set; merging on read still uses the cached GitHub JSON transient.
-		add_filter( 'site_transient_update_plugins', array( $this, 'inject_update_on_read' ), 20, 1 );
+		// Late priority so other code does not strip our entry afterward; still before the update UI renders.
+		add_filter( 'site_transient_update_plugins', array( $this, 'inject_update_on_read' ), 999, 1 );
 		add_filter( 'plugins_api', array( $this, 'plugin_info' ), 20, 3 );
 		add_filter( 'upgrader_process_complete', array( $this, 'clear_cache' ), 10, 2 );
 	}
@@ -161,6 +162,17 @@ class GitHub_Plugin_Updater {
 		$short_slug = $this->plugin_dir_slug();
 		$slugs      = $this->collect_slugs_for_this_plugin( $transient->checked );
 
+		if ( array() === $slugs && defined( 'VIBE_CHECK_UPDATER_DEBUG' ) && VIBE_CHECK_UPDATER_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
+			$keys = array_keys( $transient->checked );
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- opt-in debug.
+			error_log(
+				'Vibe Check GitHub updater: no matching basename in update_plugins->checked for this plugin file. ' .
+				'Expected key like `' . $this->plugin_slug . '`. plugin_basename=' . $this->plugin_slug .
+				' file=' . $this->plugin_file .
+				' checked_keys_sample=' . implode( ',', array_slice( $keys, 0, 15 ) )
+			);
+		}
+
 		foreach ( $slugs as $slug ) {
 			if ( ! isset( $transient->checked[ $slug ] ) ) {
 				continue;
@@ -186,7 +198,7 @@ class GitHub_Plugin_Updater {
 	}
 
 	/**
-	 * Transient key used to cache the GitHub /releases/latest JSON (for delete_transient).
+	 * Transient key used to cache the GitHub /releases/latest JSON (for delete_site_transient).
 	 *
 	 * @param string $owner Sanitized owner (same rules as config).
 	 * @param string $repo  Sanitized repo.
@@ -214,26 +226,48 @@ class GitHub_Plugin_Updater {
 	 * @return string[]
 	 */
 	private function collect_slugs_for_this_plugin( array $checked ) {
-		$our_file = @realpath( $this->plugin_file );
-		if ( ! $our_file || ! defined( 'WP_PLUGIN_DIR' ) ) {
-			return isset( $checked[ $this->plugin_slug ] ) ? array( $this->plugin_slug ) : array();
-		}
-
-		$root = @realpath( WP_PLUGIN_DIR );
-		if ( ! $root ) {
-			return isset( $checked[ $this->plugin_slug ] ) ? array( $this->plugin_slug ) : array();
-		}
-
 		$main    = basename( $this->plugin_file );
 		$pattern = '#/' . preg_quote( $main, '#' ) . '$#';
 		$out     = array();
+
+		$can_norm = function_exists( 'wp_normalize_path' )
+			&& defined( 'WP_PLUGIN_DIR' )
+			&& is_string( WP_PLUGIN_DIR )
+			&& '' !== WP_PLUGIN_DIR;
+
+		$our_norm = '';
+		$root_n   = '';
+		if ( $can_norm ) {
+			$our_norm = wp_normalize_path( $this->plugin_file );
+			$root_n   = rtrim( wp_normalize_path( WP_PLUGIN_DIR ), '/\\' );
+		}
+
+		$our_rp  = @realpath( $this->plugin_file );
+		$root_rp = ( $can_norm || ( defined( 'WP_PLUGIN_DIR' ) && is_string( WP_PLUGIN_DIR ) && '' !== WP_PLUGIN_DIR ) )
+			? @realpath( WP_PLUGIN_DIR )
+			: false;
+
 		foreach ( array_keys( $checked ) as $slug ) {
 			if ( ! is_string( $slug ) || ! preg_match( $pattern, $slug ) ) {
 				continue;
 			}
-			$path = $root . '/' . str_replace( '\\', '/', $slug );
-			$rp   = @realpath( $path );
-			if ( $rp && $rp === $our_file ) {
+			$rel = str_replace( '\\', '/', $slug );
+			$hit = false;
+
+			if ( '' !== $our_norm && '' !== $root_n ) {
+				$candidate = wp_normalize_path( $root_n . '/' . $rel );
+				if ( $candidate === $our_norm ) {
+					$hit = true;
+				}
+			}
+			if ( ! $hit && $our_rp && $root_rp ) {
+				$path = $root_rp . '/' . $rel;
+				$rp   = @realpath( $path );
+				if ( $rp && $rp === $our_rp ) {
+					$hit = true;
+				}
+			}
+			if ( $hit ) {
 				$out[] = $slug;
 			}
 		}
@@ -242,7 +276,22 @@ class GitHub_Plugin_Updater {
 			$out[] = $this->plugin_slug;
 		}
 
-		return array_values( array_unique( $out ) );
+		/**
+		 * Plugin basenames (keys in `update_plugins->checked`) that should receive GitHub update metadata.
+		 *
+		 * @param string[]              $slugs       Detected basenames (e.g. `vibe-check/vibe-check.php`).
+		 * @param array<string, string> $checked     Full `checked` map from the update transient.
+		 * @param string                $plugin_file Absolute path to this plugin’s main file (`__FILE__`).
+		 */
+		$filtered = apply_filters( 'vibe_check_github_updater_collect_slugs', $out, $checked, $this->plugin_file );
+
+		return array_values(
+			array_unique(
+				array_filter(
+					array_map( 'strval', (array) $filtered )
+				)
+			)
+		);
 	}
 
 	/**
@@ -307,7 +356,7 @@ class GitHub_Plugin_Updater {
 			'plugin' === $options['type'] &&
 			in_array( $this->plugin_slug, (array) ( $options['plugins'] ?? array() ), true )
 		) {
-			delete_transient( $this->cache_key );
+			delete_site_transient( $this->cache_key );
 			self::clear_static_memo();
 		}
 	}
@@ -375,7 +424,7 @@ class GitHub_Plugin_Updater {
 			return self::$memo_release;
 		}
 
-		$cached = get_transient( $this->cache_key );
+		$cached = get_site_transient( $this->cache_key );
 		if ( false !== $cached ) {
 			if ( self::RELEASE_FETCH_MISS === $cached ) {
 				self::$memo_set     = true;
@@ -390,7 +439,7 @@ class GitHub_Plugin_Updater {
 				return $cached;
 			}
 			// Legacy failure cache used `array()` (truthy in PHP) or corrupt payload — drop and refetch.
-			delete_transient( $this->cache_key );
+			delete_site_transient( $this->cache_key );
 		}
 
 		$url      = 'https://api.github.com/repos/' . rawurlencode( $this->owner ) . '/' . rawurlencode( $this->repo ) . '/releases/latest';
@@ -422,7 +471,7 @@ class GitHub_Plugin_Updater {
 					}
 				}
 			}
-			set_transient( $this->cache_key, self::RELEASE_FETCH_MISS, 5 * MINUTE_IN_SECONDS );
+			set_site_transient( $this->cache_key, self::RELEASE_FETCH_MISS, 5 * MINUTE_IN_SECONDS );
 			self::$memo_set     = true;
 			self::$memo_sig     = $sig;
 			self::$memo_release = null;
@@ -431,7 +480,7 @@ class GitHub_Plugin_Updater {
 
 		$body = wp_remote_retrieve_body( $response );
 		if ( strlen( $body ) > 2097152 ) {
-			set_transient( $this->cache_key, self::RELEASE_FETCH_MISS, 5 * MINUTE_IN_SECONDS );
+			set_site_transient( $this->cache_key, self::RELEASE_FETCH_MISS, 5 * MINUTE_IN_SECONDS );
 			self::$memo_set     = true;
 			self::$memo_sig     = $sig;
 			self::$memo_release = null;
@@ -441,14 +490,14 @@ class GitHub_Plugin_Updater {
 		$release = json_decode( $body, true, 32 );
 
 		if ( JSON_ERROR_NONE !== json_last_error() || empty( $release['tag_name'] ) || ! is_array( $release ) ) {
-			set_transient( $this->cache_key, self::RELEASE_FETCH_MISS, 5 * MINUTE_IN_SECONDS );
+			set_site_transient( $this->cache_key, self::RELEASE_FETCH_MISS, 5 * MINUTE_IN_SECONDS );
 			self::$memo_set     = true;
 			self::$memo_sig     = $sig;
 			self::$memo_release = null;
 			return null;
 		}
 
-		set_transient( $this->cache_key, $release, $this->cache_ttl );
+		set_site_transient( $this->cache_key, $release, $this->cache_ttl );
 		self::$memo_set     = true;
 		self::$memo_sig     = $sig;
 		self::$memo_release = $release;
